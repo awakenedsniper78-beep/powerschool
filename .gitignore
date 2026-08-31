@@ -13,3 +13,6 @@ saved_html/
 venv/
 __pycache__/
 *.pyc
+
+# Single-file build from build_offline.py -- rebuild it, don't commit it
+grades.html

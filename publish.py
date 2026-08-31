@@ -72,9 +72,9 @@ def load_payload():
     sys.exit("No cache.json or sample_data.json to publish. Run scrape.py first.")
 
 
-def main():
-    payload = load_payload()
-
+def prompt_credentials():
+    """Ask for the username and password that will unlock the file. Shared with
+    build_offline.py so both entry points enforce the same rules."""
     print("\nPick the username and password you'll type on your phone.")
     print("These are yours alone -- NOT your PowerSchool login.\n")
 
@@ -88,6 +88,13 @@ def main():
         sys.exit("Use at least 8 characters -- this file will be public, so length is the defence.")
     if getpass.getpass("Confirm password: ") != password:
         sys.exit("Passwords didn't match.")
+
+    return username, password
+
+
+def main():
+    payload = load_payload()
+    username, password = prompt_credentials()
 
     os.makedirs(os.path.dirname(OUT_FILE), exist_ok=True)
     with open(OUT_FILE, "w", encoding="utf-8") as fh:

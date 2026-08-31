@@ -31,11 +31,19 @@ async function deriveKey(username, password, salt, iterations) {
   );
 }
 
-async function unlock(username, password) {
+async function loadBlob() {
+  // build_offline.py inlines the encrypted blob so the single-file build works with no
+  // server behind it -- a fetch() would fail outright from a file:// page.
+  if (window.__GRADES_BLOB__) return window.__GRADES_BLOB__;
+
   // Cache-bust so a push of new grades shows up instead of Safari's stale copy.
   const res = await fetch(`data.enc.json?t=${Date.now()}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Couldn't load the grade file. Has it been published yet?");
-  const blob = await res.json();
+  return res.json();
+}
+
+async function unlock(username, password) {
+  const blob = await loadBlob();
 
   const key = await deriveKey(username, password, b64ToBytes(blob.salt), blob.iterations);
   let plaintext;
