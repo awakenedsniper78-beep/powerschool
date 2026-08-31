@@ -1,0 +1,80 @@
+{
+  "student": { "name": "Sample Student", "school": "Sample High School" },
+  "scraped_at": "2026-08-31T07:04:00",
+  "is_sample": true,
+  "gpa": { "weighted": 3.61, "unweighted": 3.42 },
+  "attendance": { "absences": 3, "tardies": 2 },
+  "courses": [
+    {
+      "period": "P3",
+      "name": "Biology",
+      "teacher": "Ochoa",
+      "term": "Q1",
+      "grade_letter": "B+",
+      "grade_percent": 88.4,
+      "absences": 1,
+      "tardies": 0,
+      "assignments": [
+        { "due_date": "2026-08-28", "name": "Cell Structure Lab", "category": "Labs", "score": 45, "points_possible": 50, "percent": 90.0, "missing": false, "late": false },
+        { "due_date": "2026-08-24", "name": "Osmosis Worksheet", "category": "Homework", "score": 18, "points_possible": 20, "percent": 90.0, "missing": false, "late": true },
+        { "due_date": "2026-09-02", "name": "Unit 2 Test", "category": "Tests", "score": null, "points_possible": 50, "percent": null, "missing": false, "late": false }
+      ]
+    },
+    {
+      "period": "P4",
+      "name": "Algebra II",
+      "teacher": "Pereira",
+      "term": "Q1",
+      "grade_letter": "C+",
+      "grade_percent": 79.1,
+      "absences": 2,
+      "tardies": 1,
+      "assignments": [
+        { "due_date": "2026-08-28", "name": "Problem Set 6.3", "category": "Homework", "score": null, "points_possible": 9, "percent": null, "missing": true, "late": false },
+        { "due_date": "2026-08-21", "name": "Quiz: Quadratics", "category": "Quizzes", "score": 22, "points_possible": 30, "percent": 73.3, "missing": false, "late": false },
+        { "due_date": "2026-09-04", "name": "Unit 6 Test", "category": "Tests", "score": null, "points_possible": 50, "percent": null, "missing": false, "late": false }
+      ]
+    },
+    {
+      "period": "P5",
+      "name": "English 10",
+      "teacher": "Whitlock",
+      "term": "Q1",
+      "grade_letter": "A",
+      "grade_percent": 93.0,
+      "absences": 0,
+      "tardies": 1,
+      "assignments": [
+        { "due_date": "2026-09-02", "name": "Persuasive Essay", "category": "Essays", "score": null, "points_possible": 25, "percent": null, "missing": false, "late": false },
+        { "due_date": "2026-08-25", "name": "Reading Journal 3", "category": "Homework", "score": 20, "points_possible": 20, "percent": 100.0, "missing": false, "late": false }
+      ]
+    },
+    {
+      "period": "P6",
+      "name": "US History",
+      "teacher": "Adeyemi",
+      "term": "Q1",
+      "grade_letter": "B",
+      "grade_percent": 85.6,
+      "absences": 0,
+      "tardies": 0,
+      "assignments": [
+        { "due_date": "2026-08-26", "name": "Reconstruction DBQ", "category": "Essays", "score": 34, "points_possible": 40, "percent": 85.0, "missing": false, "late": false }
+      ]
+    },
+    {
+      "period": "P2",
+      "name": "Spanish III",
+      "teacher": "Rivas",
+      "term": "Q1",
+      "grade_letter": "A",
+      "grade_percent": 96.2,
+      "absences": 0,
+      "tardies": 0,
+      "assignments": [
+        { "due_date": "2026-09-03", "name": "Vocab Set 4", "category": "Homework", "score": null, "points_possible": 3, "percent": null, "missing": false, "late": false },
+        { "due_date": "2026-08-27", "name": "Oral Presentation", "category": "Speaking", "score": 48, "points_possible": 50, "percent": 96.0, "missing": false, "late": false }
+      ]
+    }
+  ]
+}
