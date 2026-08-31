@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- viewport-fit=cover so the page reaches under the iPhone notch and home bar,
+       which the safe-area padding in style.css then compensates for. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Grades</title>
+  <meta name="theme-color" content="#0f1117" />
+  <!-- Makes "Add to Home Screen" open without Safari's address bar. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Grades" />
+  <!-- Grades are nobody else's business: keep this page out of search engines. -->
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="icon" href="icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Login gate. Nothing below it exists in the DOM until the file decrypts. -->
+  <div class="login-wrap" id="login">
+    <form class="login-card" id="login-form" autocomplete="on">
+      <h1>Grades</h1>
+      <p class="sub">Sign in to unlock.</p>
+
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" autocomplete="username"
+             autocapitalize="none" autocorrect="off" spellcheck="false" required />
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password"
+             autocomplete="current-password" required />
+
+      <label class="check">
+        <input type="checkbox" id="remember" />
+        <span>Stay signed in on this iPhone</span>
+      </label>
+
+      <button class="btn primary" id="signin" type="submit">Sign in</button>
+      <div class="login-error hidden" id="login-error"></div>
+    </form>
+  </div>
+
+  <!-- The dashboard. Hidden until decryption succeeds. -->
+  <div class="app hidden" id="app">
+    <header class="topbar">
+      <div>
+        <h1 id="greeting">Grades</h1>
+        <p class="sub" id="subline"></p>
+      </div>
+      <button id="signout" class="btn">Sign out</button>
+    </header>
+
+    <div id="sample-banner" class="banner hidden"></div>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Courses</h2>
+        <span class="hint">Tap a course to see its assignments</span>
+      </div>
+      <div id="courses"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Coming up</h2></div>
+      <div id="upcoming"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

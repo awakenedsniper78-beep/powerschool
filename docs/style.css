@@ -1,0 +1,170 @@
+:root {
+  --bg: #0f1117;
+  --panel: #161a23;
+  --panel-2: #1c212c;
+  --line: #262c3a;
+  --text: #e6e9f0;
+  --muted: #8b93a7;
+  --accent: #7c8cff;
+  --good: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.app { max-width: 1100px; margin: 0 auto; padding: 32px 24px 64px; }
+
+.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+h1 { margin: 0; font-size: 30px; letter-spacing: -0.02em; }
+.sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+.btn {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 9px 15px; font-size: 14px; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.banner {
+  margin-top: 20px; padding: 11px 15px; border-radius: 8px; font-size: 14px;
+  background: rgba(124, 140, 255, 0.1); border: 1px solid rgba(124, 140, 255, 0.3);
+}
+.banner.error { background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.35); }
+.hidden { display: none !important; }
+
+/* stat tiles */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-top: 26px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+.stat .label { color: var(--muted); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; }
+.stat .value { font-size: 32px; font-weight: 600; margin-top: 8px; letter-spacing: -0.02em; }
+.stat .note { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+/* panels */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin-top: 26px; overflow: hidden; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.panel-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.hint { color: var(--muted); font-size: 13px; }
+
+/* course rows */
+.course { border-bottom: 1px solid var(--line); }
+.course:last-child { border-bottom: none; }
+
+.course-head {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px;
+  padding: 15px 20px; cursor: pointer; background: none; border: none;
+  width: 100%; text-align: left; color: inherit; font: inherit;
+}
+.course-head:hover { background: var(--panel-2); }
+.course-name { font-weight: 600; }
+.course-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.flags { display: flex; gap: 6px; }
+.grade { font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 600; min-width: 105px; text-align: right; }
+.grade .letter { color: var(--muted); font-weight: 500; margin-left: 7px; }
+
+.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+.pill.missing { background: rgba(248,113,113,.16); color: var(--bad); }
+.pill.late { background: rgba(251,191,36,.16); color: var(--warn); }
+
+.g-good { color: var(--good); }
+.g-warn { color: var(--warn); }
+.g-bad  { color: var(--bad); }
+
+/* assignment table */
+.assignments { display: none; padding: 0 20px 18px; }
+.course.open .assignments { display: block; }
+.course.open .course-head { background: var(--panel-2); }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 10px 8px; border-bottom: 1px solid rgba(38,44,58,.55); }
+tr:last-child td { border-bottom: none; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cat { color: var(--muted); font-size: 13px; }
+.empty { color: var(--muted); padding: 18px 20px; font-size: 14px; }
+
+@media (max-width: 600px) {
+  .app { padding: 22px 15px 48px; }
+  .course-head { grid-template-columns: 1fr auto; }
+  .flags { display: none; }
+  .assignments { overflow-x: auto; }
+}
+
+/* ---------- login screen ---------- */
+
+.login-wrap {
+  min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  /* Keep the card clear of the notch and the home indicator. */
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+.login-card {
+  width: 100%; max-width: 360px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 16px; padding: 28px 24px 24px;
+}
+.login-card h1 { font-size: 26px; }
+.login-card .sub { margin: 6px 0 22px; }
+
+.login-card label {
+  display: block; color: var(--muted);
+  font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.login-card input[type="text"],
+.login-card input[type="password"] {
+  width: 100%; margin-bottom: 16px;
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 9px;
+  padding: 12px 13px;
+  /* 16px keeps iOS Safari from zooming the page when the field is focused. */
+  font: 16px/1.4 inherit;
+}
+.login-card input:focus { outline: none; border-color: var(--accent); }
+
+.login-card label.check {
+  display: flex; align-items: center; gap: 9px;
+  text-transform: none; letter-spacing: 0; font-size: 14px;
+  color: var(--muted); margin-bottom: 20px;
+}
+.login-card .check input { accent-color: var(--accent); width: 17px; height: 17px; margin: 0; }
+
+.btn.primary {
+  width: 100%; background: var(--accent); border-color: var(--accent);
+  color: #0f1117; font-weight: 600; font-size: 16px; padding: 13px;
+}
+.btn.primary:hover { filter: brightness(1.07); }
+
+.login-error {
+  margin-top: 14px; font-size: 14px; color: var(--bad);
+  background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.35);
+  border-radius: 8px; padding: 10px 13px;
+}
+
+/* ---------- phone layout ---------- */
+
+.app {
+  padding-top: max(32px, env(safe-area-inset-top));
+  padding-bottom: max(64px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 600px) {
+  .topbar { align-items: center; }
+  h1 { font-size: 25px; }
+  /* Comfortable tap targets -- Apple's guidance is 44pt minimum. */
+  .btn { padding: 11px 15px; min-height: 44px; }
+  .course-head { padding: 14px 16px; min-height: 56px; }
+  .grade { min-width: 0; }
+}

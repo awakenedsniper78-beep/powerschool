@@ -44,6 +44,8 @@ parsers.py     turns portal HTML into plain Python dicts
 scrape.py      runs the whole job, writes cache.json
 server.py      serves the dashboard + hands it cache.json as JSON
 static/        the dashboard itself (plain HTML/CSS/JS, no build step)
+publish.py     encrypts cache.json into docs/data.enc.json for the phone
+docs/          the same dashboard, hosted on GitHub Pages behind a password
 ```
 
 **Why Python does the login instead of JavaScript:** browsers refuse to let a page on
@@ -75,10 +77,68 @@ blocked, use the cookie fallback:
 Everything downstream works identically. The cookie expires after a while, so you'll need
 to refresh it occasionally.
 
+## Reading your grades on your iPhone
+
+`docs/` is a copy of the dashboard built to run with no server at all, so GitHub Pages can
+host it. You open a URL on your phone, type a username and password you picked yourself,
+and your grades appear.
+
+### Why the password is real
+
+GitHub Pages serves files. There is no server there, so there is nothing to check a
+password against — a login screen written in JavaScript alone would be a locked door
+standing next to an open window, because the data file sits right beside it and anyone
+could fetch it directly.
+
+So the password isn't checked, it *is* the key. `publish.py` encrypts your grades with
+AES-256-GCM using a key stretched from your username and password (PBKDF2-SHA256,
+310,000 rounds). What gets committed is ciphertext. Your phone downloads it and decrypts
+it locally — the password never leaves the device and is never stored in the repo.
+
+### One-time setup
+
+1. Push this branch and merge it to `main`.
+2. On GitHub: **Settings → Pages → Source: Deploy from a branch → `main` → `/docs`** → Save.
+3. Wait a minute, then note the URL it gives you: `https://<you>.github.io/powerschool/`
+
+### Every time you want fresh grades on your phone
+
+```bash
+python scrape.py                     # pull the latest from the portal
+python publish.py                    # pick your username + password, encrypt
+git add docs/data.enc.json
+git commit -m "Update grades"
+git push
+```
+
+`publish.py` asks for the username and password each run. Use the same ones every time,
+or your phone won't be able to open the new file.
+
+### On the phone
+
+Open the URL in Safari, sign in, then tap **Share → Add to Home Screen**. It gets its own
+icon and opens fullscreen, without Safari's address bar. Ticking "Stay signed in on this
+iPhone" saves the password in that browser's local storage so you skip the login next
+time — convenient, but it means anyone holding your unlocked phone can open it too.
+
+### What this does and doesn't protect
+
+- **Does:** the grade file is public, but it's unreadable ciphertext. A wrong password
+  produces nothing at all — AES-GCM rejects it outright rather than returning garbage.
+- **Doesn't:** anyone can *download* the encrypted file and guess passwords offline, as
+  fast as their hardware allows. The 310,000 KDF rounds make each guess expensive, but
+  the real defence is length. Use a passphrase of several words, not `grades123`.
+- The repo is public, so the file's *existence* is public even though its contents aren't.
+  Making the repo private hides it entirely — note that Pages on a private repo needs a
+  paid GitHub plan.
+- `cache.json` (plaintext grades) stays gitignored and never leaves your computer.
+  Only `docs/data.enc.json` is ever committed.
+
 ## Privacy
 
-- Binds to `127.0.0.1` only — reachable from this computer, nothing else.
+- The local server binds to `127.0.0.1` only — reachable from this computer, nothing else.
 - Talks to exactly one external host: your school's portal.
 - No analytics, no CDN, no external fonts or scripts.
-- `.env`, `cache.json`, and `saved_html/` are all gitignored.
+- `.env`, `cache.json`, and `saved_html/` are all gitignored. The only grade data that
+  ever gets committed is `docs/data.enc.json`, which is encrypted.
 - Read-only: nothing is ever submitted or changed on the portal.
