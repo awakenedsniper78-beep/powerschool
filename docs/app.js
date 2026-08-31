@@ -50,6 +50,60 @@ async function unlock(username, password) {
   return JSON.parse(new TextDecoder().decode(plaintext));
 }
 
+
+/* ================= theme ================= */
+
+const THEME_KEY = "grades.theme";
+const ACCENTS = [
+  ["violet", "#8b7cf6"], ["sky", "#38bdf8"], ["mint", "#34d399"],
+  ["amber", "#fbbf24"], ["rose", "#fb7185"],
+];
+
+const theme = { mode: "system", accent: "violet" };
+
+function loadTheme() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(THEME_KEY) || "null"); }
+  catch { /* unreadable or blocked; defaults stand */ }
+  if (saved?.mode) theme.mode = saved.mode;
+  if (saved?.accent && ACCENTS.some(([n]) => n === saved.accent)) theme.accent = saved.accent;
+}
+
+const prefersLight = () =>
+  window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+
+/** Resolve "system" here so the CSS only ever deals with an explicit light or dark. */
+function applyTheme() {
+  const resolved = theme.mode === "system" ? (prefersLight() ? "light" : "dark") : theme.mode;
+  const root = document.documentElement;
+  root.setAttribute("data-theme", resolved);
+  root.setAttribute("data-accent", theme.accent);
+
+  // Keeps the iOS status bar from clashing with the page behind it.
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    meta.setAttribute("content",
+      getComputedStyle(root).getPropertyValue("--bg").trim() || "#0b0d14");
+  }
+}
+
+function setTheme(patch) {
+  Object.assign(theme, patch);
+  try { localStorage.setItem(THEME_KEY, JSON.stringify(theme)); }
+  catch { /* private browsing; the choice still applies for this session */ }
+  applyTheme();
+}
+
+loadTheme();
+applyTheme();
+
+// Follow the phone's own light/dark switch, but only while set to System.
+if (window.matchMedia) {
+  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+    if (theme.mode === "system") applyTheme();
+  });
+}
+
 /* ================= state ================= */
 
 const state = { data: null, tab: "today", course: null };
@@ -294,6 +348,11 @@ function wire() {
   if (back) back.addEventListener("click", () => { state.course = null; draw(); window.scrollTo(0, 0); });
   const slider = $("#whatif");
   if (slider) slider.addEventListener("input", () => renderWhatIf(state.course, Number(slider.value)));
+  document.querySelectorAll("#mode button").forEach((b) =>
+    b.addEventListener("click", () => { setTheme({ mode: b.dataset.mode }); draw(); }));
+  document.querySelectorAll("#accents .swatch").forEach((b) =>
+    b.addEventListener("click", () => { setTheme({ accent: b.dataset.accent }); draw(); }));
+
   const out = $("#signout");
   if (out) out.addEventListener("click", signOut);
 }
@@ -582,6 +641,16 @@ function viewMe() {
     <div class="mini">
       <div class="b"><div class="k">Courses</div><div class="v">${courses().length}</div></div>
       <div class="b"><div class="k">Synced</div><div class="v" style="font-size:17px">${esc(d.scraped_at ? fmtWhen(d.scraped_at) : "—")}</div></div>
+    </div>
+    <div class="sec-label">Appearance</div>
+    <div class="seg" id="mode">
+      ${[["system", "System"], ["light", "Light"], ["dark", "Dark"]].map(([v, lb]) =>
+        `<button data-mode="${v}" class="${theme.mode === v ? "on" : ""}">${lb}</button>`).join("")}
+    </div>
+    <div class="sec-label">Colour</div>
+    <div class="swatches" id="accents">
+      ${ACCENTS.map(([name, hex]) => `<button class="swatch ${theme.accent === name ? "on" : ""}"
+          data-accent="${name}" style="--sw:${hex}" aria-label="${name}"><i></i></button>`).join("")}
     </div>
     ${d.is_sample ? `<p class="note">This is sample data — no real grades have been published yet.</p>` : ""}
     <button class="btn ghost" id="signout">Sign out</button>`;

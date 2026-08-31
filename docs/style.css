@@ -7,8 +7,11 @@
   --text: #e9ebf3;
   --muted: #868da4;
   --dim: #5d6478;
-  --accent: #8b7cf6;
-  --accent-soft: rgba(139, 124, 246, 0.16);
+  --track: rgba(255,255,255,.10);
+  --bar-bg: rgba(11,13,20,.92);
+  --on-accent: #0b0d14;
+  --bad-soft: rgba(248,113,113,.10);
+  --bad-line: rgba(248,113,113,.35);
   --good: #4ade80;
   --warn: #fbbf24;
   --bad: #f87171;
@@ -42,7 +45,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .brand { display: flex; align-items: center; gap: 9px; font-size: 22px; font-weight: 650; letter-spacing: -0.02em; }
 .mark {
   width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft);
-  border: 1px solid rgba(139,124,246,.45); position: relative; flex: none;
+  border: 1px solid var(--accent-line); position: relative; flex: none;
 }
 .mark::after {
   content: ""; position: absolute; inset: 6px 5px;
@@ -67,12 +70,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .login-card .check input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; }
 .btn.primary {
-  width: 100%; background: var(--accent); color: #0b0d14;
+  width: 100%; background: var(--accent); color: var(--on-accent);
   font-weight: 650; font-size: 16px; padding: 14px; border-radius: 12px;
 }
 .login-error {
   margin-top: 14px; font-size: 14px; color: var(--bad);
-  background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.35);
+  background: var(--bad-soft); border: 1px solid var(--bad-line);
   border-radius: 10px; padding: 11px 13px;
 }
 
@@ -97,7 +100,7 @@ main { padding: max(14px, env(safe-area-inset-top)) var(--pad) 24px; max-width: 
   font-size: 11px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--dim);
   margin: 30px 0 12px; display: flex; align-items: baseline; justify-content: space-between;
 }
-.sec-label .link { color: var(--accent); letter-spacing: 0; text-transform: none; font-size: 13px; }
+.sec-label .link { color: var(--accent-ink); letter-spacing: 0; text-transform: none; font-size: 13px; }
 
 /* today: period strip */
 .periods { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 9px; }
@@ -106,7 +109,7 @@ main { padding: max(14px, env(safe-area-inset-top)) var(--pad) 24px; max-width: 
   padding: 11px 10px; min-height: 76px; text-align: left;
   display: flex; flex-direction: column; gap: 3px;
 }
-.period.flag { border-color: rgba(139,124,246,.5); }
+.period.flag { border-color: var(--accent-line); }
 .period .p { font-size: 11px; color: var(--dim); }
 .period .n { font-size: 14.5px; white-space: nowrap; font-weight: 600; letter-spacing: -0.01em; }
 .period .d { font-size: 12px; color: var(--accent); margin-top: auto; }
@@ -128,13 +131,13 @@ main { padding: max(14px, env(safe-area-inset-top)) var(--pad) 24px; max-width: 
 
 /* standing */
 .standing-hero {
-  background: linear-gradient(170deg, rgba(139,124,246,.20), rgba(139,124,246,.03) 62%, transparent);
+  background: linear-gradient(170deg, var(--accent-soft), var(--accent-faint) 62%, transparent);
   border-radius: 22px; padding: 22px 20px 24px; margin: 0 calc(var(--pad) * -1); padding-left: var(--pad); padding-right: var(--pad);
 }
 .gpa-big { display: flex; align-items: baseline; gap: 12px; }
 .gpa-big .n { font-size: 62px; font-weight: 300; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
 .gpa-big .u { font-size: 14px; color: var(--muted); line-height: 1.25; }
-.scale { position: relative; height: 4px; background: rgba(255,255,255,.1); border-radius: 999px; margin: 22px 0 0; }
+.scale { position: relative; height: 4px; background: var(--track); border-radius: 999px; margin: 22px 0 0; }
 .scale .dot {
   position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%;
   background: var(--accent); transform: translate(-50%, -50%); box-shadow: 0 0 0 4px var(--bg);
@@ -157,7 +160,7 @@ main { padding: max(14px, env(safe-area-inset-top)) var(--pad) 24px; max-width: 
   background: var(--card); border: 1px solid var(--line); border-radius: 16px;
   padding: 16px 8px 13px; display: flex; flex-direction: column; align-items: center; gap: 9px;
 }
-.donut.sel { border-color: rgba(139,124,246,.55); }
+.donut.sel { border-color: var(--accent-line); }
 .donut .lb { font-size: 12.5px; color: var(--muted); }
 
 /* course detail */
@@ -226,7 +229,7 @@ input[type="range"]::-moz-range-thumb { width: 21px; height: 21px; border-radius
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
   display: grid; grid-template-columns: repeat(4, 1fr);
-  background: rgba(11,13,20,.92); backdrop-filter: blur(18px);
+  background: var(--bar-bg); backdrop-filter: blur(18px);
   border-top: 1px solid var(--line);
   padding: 9px 6px max(9px, env(safe-area-inset-bottom));
 }
@@ -234,7 +237,7 @@ input[type="range"]::-moz-range-thumb { width: 21px; height: 21px; border-radius
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   font-size: 10.5px; color: var(--dim); padding: 4px 0; min-height: 44px;
 }
-.tab.on { color: var(--accent); }
+.tab.on { color: var(--accent-ink); }
 .ico { width: 21px; height: 21px; display: block; background: currentColor; }
 .ico[data-i="today"]  { -webkit-mask: var(--m-home) center/contain no-repeat;  mask: var(--m-home) center/contain no-repeat; }
 .ico[data-i="grades"] { -webkit-mask: var(--m-chart) center/contain no-repeat; mask: var(--m-chart) center/contain no-repeat; }
@@ -249,4 +252,132 @@ input[type="range"]::-moz-range-thumb { width: 21px; height: 21px; border-radius
 
 @media (min-width: 640px) {
   .tabbar { max-width: 620px; margin: 0 auto; border-radius: 18px 18px 0 0; border: 1px solid var(--line); border-bottom: none; }
+}
+
+/* ---------- theming ----------
+   app.js resolves "system" to an explicit data-theme, so the CSS only ever sees
+   light or dark and there's no media query duplicating the palette. */
+:root[data-theme="light"] {
+  --bg: #f5f6fa;
+  --bg-lift: #ffffff;
+  --card: #ffffff;
+  --card-2: #eef0f6;
+  --line: #e0e3ec;
+  --text: #151824;
+  --muted: #5b6379;
+  --dim: #868da0;
+  --good: #15803d;
+  --warn: #b45309;
+  --bad: #dc2626;
+  --track: rgba(0,0,0,.10);
+  --bar-bg: rgba(245,246,250,.92);
+  --on-accent: #ffffff;
+  --bad-soft: rgba(220,38,38,.08);
+  --bad-line: rgba(220,38,38,.30);
+}
+
+/* Light cards sit on a light ground, so they need a shadow rather than a glow. */
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .login-card,
+:root[data-theme="light"] .period,
+:root[data-theme="light"] .donut,
+:root[data-theme="light"] .nudge,
+:root[data-theme="light"] .mini .b {
+  box-shadow: 0 1px 2px rgba(16, 20, 40, .04);
+}
+:root[data-accent="violet"] {
+  --accent: #8b7cf6;
+  --accent-ink: #8b7cf6;
+  --accent-soft: rgba(139,124,246,.16);
+  --accent-faint: rgba(139,124,246,.03);
+  --accent-line: rgba(139,124,246,.45);
+}
+:root[data-theme="light"][data-accent="violet"] {
+  --accent: #6d5ce0;
+  --accent-ink: #6d5ce0;
+  --accent-soft: rgba(109,92,224,.12);
+  --accent-faint: rgba(109,92,224,.02);
+  --accent-line: rgba(109,92,224,.35);
+}
+:root[data-accent="sky"] {
+  --accent: #38bdf8;
+  --accent-ink: #38bdf8;
+  --accent-soft: rgba(56,189,248,.16);
+  --accent-faint: rgba(56,189,248,.03);
+  --accent-line: rgba(56,189,248,.45);
+}
+:root[data-theme="light"][data-accent="sky"] {
+  --accent: #0284c7;
+  --accent-ink: #0284c7;
+  --accent-soft: rgba(2,132,199,.12);
+  --accent-faint: rgba(2,132,199,.02);
+  --accent-line: rgba(2,132,199,.35);
+}
+:root[data-accent="mint"] {
+  --accent: #34d399;
+  --accent-ink: #34d399;
+  --accent-soft: rgba(52,211,153,.16);
+  --accent-faint: rgba(52,211,153,.03);
+  --accent-line: rgba(52,211,153,.45);
+}
+:root[data-theme="light"][data-accent="mint"] {
+  --accent: #059669;
+  --accent-ink: #059669;
+  --accent-soft: rgba(5,150,105,.12);
+  --accent-faint: rgba(5,150,105,.02);
+  --accent-line: rgba(5,150,105,.35);
+}
+:root[data-accent="amber"] {
+  --accent: #fbbf24;
+  --accent-ink: #fbbf24;
+  --accent-soft: rgba(251,191,36,.16);
+  --accent-faint: rgba(251,191,36,.03);
+  --accent-line: rgba(251,191,36,.45);
+}
+:root[data-theme="light"][data-accent="amber"] {
+  --accent: #b45309;
+  --accent-ink: #b45309;
+  --accent-soft: rgba(180,83,9,.12);
+  --accent-faint: rgba(180,83,9,.02);
+  --accent-line: rgba(180,83,9,.35);
+}
+:root[data-accent="rose"] {
+  --accent: #fb7185;
+  --accent-ink: #fb7185;
+  --accent-soft: rgba(251,113,133,.16);
+  --accent-faint: rgba(251,113,133,.03);
+  --accent-line: rgba(251,113,133,.45);
+}
+:root[data-theme="light"][data-accent="rose"] {
+  --accent: #e11d48;
+  --accent-ink: #e11d48;
+  --accent-soft: rgba(225,29,72,.12);
+  --accent-faint: rgba(225,29,72,.02);
+  --accent-line: rgba(225,29,72,.35);
+}
+
+/* ---------- settings controls ---------- */
+
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 13px; padding: 5px; }
+.seg button {
+  padding: 10px 4px; border-radius: 9px; font-size: 13.5px; font-weight: 600;
+  color: var(--muted); min-height: 40px;
+}
+.seg button.on { background: var(--accent); color: var(--on-accent); }
+
+.swatches { display: flex; gap: 12px; flex-wrap: wrap; }
+.swatch {
+  width: 46px; height: 46px; border-radius: 50%; padding: 0;
+  border: 2px solid transparent; position: relative;
+  display: grid; place-items: center;
+}
+.swatch i { display: block; width: 32px; height: 32px; border-radius: 50%; background: var(--sw); }
+.swatch.on { border-color: var(--text); }
+.swatch.on::after {
+  content: ""; position: absolute; width: 11px; height: 6px;
+  /* Fixed dark, not --on-accent: the tick sits on the swatch's own bright colour,
+     which is the same in both themes. */
+  border-left: 2.5px solid #0b0d14; border-bottom: 2.5px solid #0b0d14;
+  transform: rotate(-45deg) translate(1px, -1px);
 }
