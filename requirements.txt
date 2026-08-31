@@ -1,0 +1,4 @@
+requests>=2.32
+beautifulsoup4>=4.12
+flask>=3.0
+python-dotenv>=1.0

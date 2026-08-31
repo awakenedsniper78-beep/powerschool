@@ -1,0 +1,15 @@
+# Secrets — never commit these
+.env
+
+# Scraped data — this is your real grade data, keep it local
+cache.json
+saved_html/
+
+# Server logs
+*.log
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc

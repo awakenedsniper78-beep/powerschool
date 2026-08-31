@@ -1,0 +1,99 @@
+:root {
+  --bg: #0f1117;
+  --panel: #161a23;
+  --panel-2: #1c212c;
+  --line: #262c3a;
+  --text: #e6e9f0;
+  --muted: #8b93a7;
+  --accent: #7c8cff;
+  --good: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.app { max-width: 1100px; margin: 0 auto; padding: 32px 24px 64px; }
+
+.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+h1 { margin: 0; font-size: 30px; letter-spacing: -0.02em; }
+.sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+.btn {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 9px 15px; font-size: 14px; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.banner {
+  margin-top: 20px; padding: 11px 15px; border-radius: 8px; font-size: 14px;
+  background: rgba(124, 140, 255, 0.1); border: 1px solid rgba(124, 140, 255, 0.3);
+}
+.banner.error { background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.35); }
+.hidden { display: none; }
+
+/* stat tiles */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-top: 26px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+.stat .label { color: var(--muted); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; }
+.stat .value { font-size: 32px; font-weight: 600; margin-top: 8px; letter-spacing: -0.02em; }
+.stat .note { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+/* panels */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin-top: 26px; overflow: hidden; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.panel-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.hint { color: var(--muted); font-size: 13px; }
+
+/* course rows */
+.course { border-bottom: 1px solid var(--line); }
+.course:last-child { border-bottom: none; }
+
+.course-head {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px;
+  padding: 15px 20px; cursor: pointer; background: none; border: none;
+  width: 100%; text-align: left; color: inherit; font: inherit;
+}
+.course-head:hover { background: var(--panel-2); }
+.course-name { font-weight: 600; }
+.course-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.flags { display: flex; gap: 6px; }
+.grade { font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 600; min-width: 105px; text-align: right; }
+.grade .letter { color: var(--muted); font-weight: 500; margin-left: 7px; }
+
+.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+.pill.missing { background: rgba(248,113,113,.16); color: var(--bad); }
+.pill.late { background: rgba(251,191,36,.16); color: var(--warn); }
+
+.g-good { color: var(--good); }
+.g-warn { color: var(--warn); }
+.g-bad  { color: var(--bad); }
+
+/* assignment table */
+.assignments { display: none; padding: 0 20px 18px; }
+.course.open .assignments { display: block; }
+.course.open .course-head { background: var(--panel-2); }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 10px 8px; border-bottom: 1px solid rgba(38,44,58,.55); }
+tr:last-child td { border-bottom: none; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cat { color: var(--muted); font-size: 13px; }
+.empty { color: var(--muted); padding: 18px 20px; font-size: 14px; }
+
+@media (max-width: 600px) {
+  .app { padding: 22px 15px 48px; }
+  .course-head { grid-template-columns: 1fr auto; }
+  .flags { display: none; }
+  .assignments { overflow-x: auto; }
+}

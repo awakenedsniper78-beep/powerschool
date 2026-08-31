@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grades</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <h1 id="greeting">Loading…</h1>
+        <p class="sub" id="subline"></p>
+      </div>
+      <button id="refresh" class="btn">Refresh from portal</button>
+    </header>
+
+    <div id="sample-banner" class="banner hidden">
+      Showing <strong>sample data</strong> — no real grades scraped yet.
+    </div>
+    <div id="error-banner" class="banner error hidden"></div>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Courses</h2>
+        <span class="hint">Click a course to see its assignments</span>
+      </div>
+      <div id="courses"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Coming up</h2></div>
+      <div id="upcoming"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
