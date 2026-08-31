@@ -1,0 +1,52 @@
+# Refreshes the grades on the website by itself, so nothing has to run on a computer.
+#
+# Before this works, add four secrets under
+# Settings > Secrets and variables > Actions > New repository secret:
+#
+#   PS_USERNAME     your PowerSchool username
+#   PS_PASSWORD     your PowerSchool password
+#   DASH_USERNAME   the username you type on your phone
+#   DASH_PASSWORD   the password you type on your phone (8+ characters)
+#
+# Secrets are encrypted and are never shown in logs, not even on a public repository.
+
+name: Update grades
+
+on:
+  schedule:
+    # Every day at 11:00 and 23:00 UTC (7am and 7pm Eastern).
+    - cron: "0 11,23 * * *"
+  # Adds a "Run workflow" button, which works from the GitHub site in Safari.
+  workflow_dispatch:
+
+# Needed so the job can commit the refreshed data file back to the repo.
+permissions:
+  contents: write
+
+# If a scheduled run and a manual run overlap, let the newer one win rather than
+# having two jobs push commits over each other.
+concurrency:
+  group: update-grades
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Scrape, encrypt, and publish
+        env:
+          PS_BASE_URL: https://birmingham.powerschool.com
+          PS_USERNAME: ${{ secrets.PS_USERNAME }}
+          PS_PASSWORD: ${{ secrets.PS_PASSWORD }}
+          DASH_USERNAME: ${{ secrets.DASH_USERNAME }}
+          DASH_PASSWORD: ${{ secrets.DASH_PASSWORD }}
+        run: python sync.py

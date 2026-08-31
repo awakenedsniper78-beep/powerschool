@@ -20,8 +20,9 @@ import json
 import os
 import secrets
 import sys
-from base64 import b64encode
+from base64 import b64decode, b64encode
 
+from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -37,10 +38,10 @@ OUT_FILE = os.path.join(HERE, "docs", "data.enc.json")
 ITERATIONS = 310_000
 
 
-def derive_key(username, password, salt):
+def derive_key(username, password, salt, iterations=ITERATIONS):
     """Both the username and password go into the key, so both must be right."""
     material = f"{username.strip().lower()}\n{password}".encode("utf-8")
-    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=ITERATIONS)
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=iterations)
     return kdf.derive(material)
 
 
@@ -59,6 +60,17 @@ def encrypt(payload, username, password):
         "nonce": b64encode(nonce).decode(),
         "ciphertext": b64encode(ciphertext).decode(),
     }
+
+
+def decrypt(blob, username, password):
+    """Reverse of encrypt(). Returns None if the credentials don't open the file, which
+    is also how a file written under a different password reads."""
+    key = derive_key(username, password, b64decode(blob["salt"]), blob.get("iterations", ITERATIONS))
+    try:
+        plaintext = AESGCM(key).decrypt(b64decode(blob["nonce"]), b64decode(blob["ciphertext"]), None)
+    except InvalidTag:
+        return None
+    return json.loads(plaintext.decode("utf-8"))
 
 
 def load_payload():

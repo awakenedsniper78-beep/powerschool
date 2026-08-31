@@ -44,9 +44,11 @@ parsers.py     turns portal HTML into plain Python dicts
 scrape.py      runs the whole job, writes cache.json
 server.py      serves the dashboard + hands it cache.json as JSON
 static/        the dashboard itself (plain HTML/CSS/JS, no build step)
-publish.py     encrypts cache.json into docs/data.enc.json for the phone
+sync.py        scrape -> encrypt -> commit -> push, in one command
+publish.py     just the encrypt step, if you want it on its own
 docs/          the same dashboard, hosted on GitHub Pages behind a password
 build_offline.py  bundles all of docs/ into one grades.html, no hosting needed
+.github/workflows/update-grades.yml   runs sync.py twice a day, unattended
 ```
 
 **Why Python does the login instead of JavaScript:** browsers refuse to let a page on
@@ -78,89 +80,69 @@ blocked, use the cookie fallback:
 Everything downstream works identically. The cookie expires after a while, so you'll need
 to refresh it occasionally.
 
-## Reading your grades on your iPhone
+## The website
 
-`docs/` is a copy of the dashboard built to run with no server at all, so GitHub Pages can
-host it. You open a URL on your phone, type a username and password you picked yourself,
-and your grades appear.
+The dashboard also runs as a website you can open on your phone, at
+`https://<you>.github.io/powerschool/`. It looks and works like the local one; it just
+asks for a password first.
 
-### Why the password is real
+It keeps itself up to date. `.github/workflows/update-grades.yml` scrapes the portal
+twice a day, encrypts the result, and commits it. Nothing has to run on your computer.
 
-GitHub Pages serves files. There is no server there, so there is nothing to check a
-password against — a login screen written in JavaScript alone would be a locked door
-standing next to an open window, because the data file sits right beside it and anyone
-could fetch it directly.
+### Why there's a password
 
-So the password isn't checked, it *is* the key. `publish.py` encrypts your grades with
-AES-256-GCM using a key stretched from your username and password (PBKDF2-SHA256,
-310,000 rounds). What gets committed is ciphertext. Your phone downloads it and decrypts
-it locally — the password never leaves the device and is never stored in the repo.
+GitHub Pages serves files and nothing else. There is no server there to check a password
+against, so a login screen written in JavaScript alone would be a locked door beside an
+open window — the data file would sit next to it, readable by anyone who typed the URL.
 
-### Getting it onto the phone — pick one
+So the password isn't checked, it *is* the key. `docs/data.enc.json` is AES-256-GCM
+ciphertext under a key stretched from your username and password (PBKDF2-SHA256, 310,000
+rounds). Your phone downloads it and decrypts it locally. A wrong password produces
+nothing at all — the authentication tag simply fails.
 
-**GitHub Pages** is free only for *public* repositories. On a private repo it needs a paid
-plan, so if this repo is private, pick one of the other two.
+### Turning it on
 
-**1. GitHub Pages (free if the repo is public).** Make the repo public, then
-**Settings → Pages → Source: Deploy from a branch → `main` → `/docs`** → Save. A minute
-later you get `https://<you>.github.io/powerschool/`. Nothing secret lives in this repo —
-`.env` and `cache.json` are gitignored and never were committed, and the only grade data
-here is encrypted. Going public does reveal that *you* have a PowerSchool scraper for your
-district, just never what your grades are.
+Add four secrets under **Settings → Secrets and variables → Actions**. You can do this
+from Safari on your phone.
 
-**2. No hosting at all (free, repo stays private).**
+| Secret | What it is |
+| --- | --- |
+| `PS_USERNAME` | your PowerSchool username |
+| `PS_PASSWORD` | your PowerSchool password |
+| `DASH_USERNAME` | the username you'll type on the website |
+| `DASH_PASSWORD` | the password you'll type on the website (8+ characters) |
 
-```bash
-python build_offline.py
-```
+Then **Actions → Update grades → Run workflow** for the first run. After that it's on its
+own schedule. Open the site, sign in, and tap **Share → Add to Home Screen** to get an
+icon that opens fullscreen.
 
-That writes `grades.html`, one self-contained file with the stylesheet, the script, and
-your encrypted grades inlined. Put it in iCloud Drive, then open it from the **Files** app
-on your iPhone — it still asks for your password and still decrypts locally. Updating
-means rebuilding the file and replacing it.
+GitHub encrypts these secrets and masks them in logs, including on a public repository.
+Pull requests from forks don't get access to them.
 
-**3. A different free static host (free, repo stays private).** Netlify, Cloudflare Pages
-and Vercel all have free tiers that deploy from a private repo — point them at `docs/`.
-Or skip the repo link entirely and drag `grades.html` onto <https://app.netlify.com/drop>
-for an instant URL.
-
-### Every time you want fresh grades on your phone
+### Doing it by hand instead
 
 ```bash
-python scrape.py                     # pull the latest from the portal
-python publish.py                    # pick your username + password, encrypt
-git add docs/data.enc.json
-git commit -m "Update grades"
-git push
+python sync.py
 ```
 
-(Using the offline file instead? Run `python build_offline.py` in place of `publish.py`
-and copy the fresh `grades.html` over to iCloud Drive — nothing to commit.)
+Scrapes, encrypts, commits, pushes — the same job the workflow does, run from your
+computer. With `DASH_USERNAME` and `DASH_PASSWORD` in `.env` it asks nothing.
 
-Both scripts ask for the username and password each run. Use the same ones every time,
-or your phone won't be able to open the new file.
+`python build_offline.py` is a third option: it bundles everything into a single
+`grades.html` that needs no hosting at all, for putting in iCloud Drive or dragging onto
+a free static host. Useful if you ever make this repo private, since Pages then costs
+money.
 
-### On the phone
+### What this protects, and what it doesn't
 
-If you have a URL (options 1 and 3), open it in Safari, sign in, then tap
-**Share → Add to Home Screen**. It gets its own icon and opens fullscreen, without
-Safari's address bar. (A file opened from the Files app can't be added to the Home
-Screen — that's the trade-off for needing no host.) Ticking "Stay signed in on this
-iPhone" saves the password in that browser's local storage so you skip the login next
-time — convenient, but it means anyone holding your unlocked phone can open it too.
-
-### What this does and doesn't protect
-
-- **Does:** the grade file is public, but it's unreadable ciphertext. A wrong password
-  produces nothing at all — AES-GCM rejects it outright rather than returning garbage.
-- **Doesn't:** anyone can *download* the encrypted file and guess passwords offline, as
-  fast as their hardware allows. The 310,000 KDF rounds make each guess expensive, but
-  the real defence is length. Use a passphrase of several words, not `grades123`.
-- The repo is public, so the file's *existence* is public even though its contents aren't.
-  Making the repo private hides it entirely — note that Pages on a private repo needs a
-  paid GitHub plan.
-- `cache.json` (plaintext grades) stays gitignored and never leaves your computer.
-  Only `docs/data.enc.json` is ever committed.
+- **Does:** the grade file is public, but it's unreadable ciphertext.
+- **Doesn't:** anyone can download that file and guess passwords offline as fast as their
+  hardware allows. The 310,000 KDF rounds make each guess expensive, but length is the
+  real defence. Use a passphrase of several words, not `grades123`.
+- The repo being public reveals that you scrape your district's portal — never your
+  grades.
+- `.env` and `cache.json` are gitignored and have never been committed. The only grade
+  data in the repo is encrypted.
 
 ## Privacy
 
