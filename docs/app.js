@@ -376,9 +376,14 @@ function viewToday() {
 
   const dropped = withDelta.filter((x) => x.delta != null && x.delta < -0.05);
   const gpa = state.data?.gpa?.weighted;
+  const anyGraded = cs.some((c) => typeof c.grade_percent === "number");
 
   let head, quiet;
   if (!cs.length) { head = "Nothing here yet."; quiet = "No courses came back from the portal."; }
+  else if (!anyGraded) {
+    head = "No grades yet.";
+    quiet = "Your teachers haven't posted anything this term.";
+  }
   else if (!dropped.length) { head = "You're steady."; quiet = "Nothing dropped this week."; }
   else if (dropped.length === 1) { head = "One grade slipped."; quiet = `${dropped[0].c.name} is moving down.`; }
   else { head = `${dropped.length} grades slipped.`; quiet = dropped.map((x) => x.c.name).join(", ") + " are moving down."; }
@@ -446,7 +451,10 @@ function viewGrades() {
   const holding = withDelta.length - moving.length;
 
   let prose;
-  if (!withDelta.some((x) => x.delta != null)) {
+  if (!cs.some((c) => typeof c.grade_percent === "number")) {
+    prose = `Your ${cs.length} courses are listed below, but no grades have been posted
+      yet. This fills in on its own once your teachers start entering them.`;
+  } else if (!withDelta.some((x) => x.delta != null)) {
     prose = "Not enough graded work yet to say which way anything is moving.";
   } else if (!moving.length) {
     prose = `All <span class="em">${withDelta.length}</span> courses are holding or climbing.`;

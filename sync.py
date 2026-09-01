@@ -17,7 +17,7 @@ import sys
 
 from dotenv import load_dotenv
 
-from publish import OUT_FILE, decrypt, encrypt, prompt_credentials
+from publish import OUT_FILE, encrypt, prompt_credentials
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE_FILE = os.path.join(HERE, "cache.json")
@@ -51,32 +51,6 @@ def credentials():
     return prompt_credentials()
 
 
-def grades_only(data):
-    """The payload minus its timestamp, for deciding whether anything actually moved.
-    scraped_at changes on every run by definition, so comparing with it in would call
-    every run a change."""
-    return json.dumps({k: v for k, v in data.items() if k != "scraped_at"}, sort_keys=True)
-
-
-def already_published(data, username, password):
-    """Is the site already showing exactly these grades?
-
-    Compares against the published file rather than cache.json, because cache.json is
-    gitignored -- a GitHub Actions runner checks out a fresh copy without it and would
-    otherwise republish on every single run.
-    """
-    if not os.path.exists(OUT_FILE):
-        return False
-    try:
-        with open(OUT_FILE, encoding="utf-8") as fh:
-            previous = decrypt(json.load(fh), username, password)
-    except (json.JSONDecodeError, OSError, KeyError):
-        return False  # unreadable: treat as changed and republish
-    # previous is None when the file was written under different credentials, in which
-    # case it must be rewritten so the new password opens it.
-    return previous is not None and grades_only(previous) == grades_only(data)
-
-
 def main():
     # Credentials first: they're needed to read the published file, and a missing secret
     # should stop the run before it touches the school's servers.
@@ -92,13 +66,6 @@ def main():
     graded = [c for c in courses if c.get("grade_percent") is not None]
     print(f"  {len(courses)} courses, {len(graded)} with grades posted")
 
-    # Encryption uses a fresh random salt every time, so re-encrypting identical grades
-    # still produces a different file. Compare the grades themselves, or the scheduled
-    # run would commit twice a day forever with nothing to say.
-    if already_published(data, username, password):
-        print("\nNo change since the last sync -- the site is already up to date.")
-        return
-
     # 2. Encrypt.
     os.makedirs(os.path.dirname(OUT_FILE), exist_ok=True)
     with open(OUT_FILE, "w", encoding="utf-8") as fh:
@@ -106,10 +73,13 @@ def main():
     print("Encrypted.")
 
     # 3. Publish. Nothing to do if the grades haven't moved since last time.
+    # Every run republishes, even when no grade moved, so the timestamp the site shows
+    # is when it last checked rather than when a grade last changed. A stale "synced"
+    # reading looks broken; two commits a day does not.
     rel = os.path.relpath(OUT_FILE, HERE)
     git("add", rel)
     if not git("diff", "--cached", "--quiet", check=False).returncode:
-        print("\nNothing staged -- the site is already up to date.")
+        print("\nNothing staged -- nothing to publish.")
         return
 
     branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
