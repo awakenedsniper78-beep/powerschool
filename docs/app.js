@@ -96,6 +96,10 @@ function setTheme(patch) {
 
 loadTheme();
 applyTheme();
+// Only after the first paint, so the opening render doesn't cross-fade from the
+// wrong palette on the way in.
+requestAnimationFrame(() => requestAnimationFrame(() =>
+  document.body.classList.add("theme-anim")));
 
 // Follow the phone's own light/dark switch, but only while set to System.
 if (window.matchMedia) {
@@ -277,8 +281,8 @@ function sparkline(series, w = 62, h = 22) {
   const trend = ys[ys.length - 1] - ys[0];
   const color = trend > 0.05 ? "var(--good)" : trend < -0.05 ? "var(--bad)" : "var(--muted)";
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true">
-    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6"
-      stroke-linecap="round" stroke-linejoin="round" /></svg>`;
+    <polyline class="draw-path" pathLength="1" points="${pts}" fill="none" stroke="${color}"
+      stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
 }
 
 function targetIcon(size = 32) {
@@ -294,8 +298,10 @@ function donut(pct, label, size = 58) {
   const shown = typeof pct === "number" ? Math.max(0, Math.min(100, pct)) : 0;
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
     <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="4"/>
-    <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--accent)" stroke-width="4"
-      stroke-linecap="round" stroke-dasharray="${(c * shown / 100).toFixed(1)} ${c.toFixed(1)}"
+    <circle class="ring-arc" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
+      stroke="var(--accent)" stroke-width="4" stroke-linecap="round"
+      stroke-dasharray="${(c * shown / 100).toFixed(1)} ${c.toFixed(1)}"
+      style="--len:${(c * shown / 100).toFixed(1)}"
       transform="rotate(-90 ${size / 2} ${size / 2})"/>
     <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
       fill="var(--text)" font-size="15" font-weight="600">${esc(label)}</text></svg>`;
@@ -318,40 +324,78 @@ function lineChart(series, w = 560, h = 74) {
   const d = series.map((p, i) => { const [x, y] = pt(p, i); return `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`; }).join(" ");
   const [ex, ey] = pt(series[series.length - 1], series.length - 1);
   return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
-    <path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2"
-      stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <path class="draw-path" pathLength="1" d="${d}" fill="none" stroke="var(--accent)"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      vector-effect="non-scaling-stroke"/>
     <circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="3" fill="var(--accent)"/></svg>`;
 }
 
 /* ================= screens ================= */
 
-function draw() {
+const REDUCED = () =>
+  window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Tick a number up to its target. Skipped outright when motion is turned down. */
+function countUp(el, to, ms = 620) {
+  if (!el) return;
+  if (REDUCED()) { el.textContent = to.toFixed(2); return; }
+  const t0 = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / ms);
+    // ease-out cubic, so it decelerates into the final value
+    el.textContent = (to * (1 - Math.pow(1 - k, 3))).toFixed(2);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/** Replay a screen entrance. The class must be removed and re-added around a forced
+ *  reflow, or the browser sees no change and won't restart the animation. */
+function playScreen(anim) {
+  const el = $("#screen");
+  if (!el) return;
+  el.classList.remove("anim-fade", "anim-push", "anim-pop");
+  if (!anim || anim === "none" || REDUCED()) return;
+  void el.offsetWidth;
+  el.classList.add(`anim-${anim}`);
+}
+
+
+
+function draw(anim = "fade") {
   const el = $("#screen");
   if (state.course != null) el.innerHTML = viewCourse(state.course);
   else if (state.tab === "today") el.innerHTML = viewToday();
   else if (state.tab === "grades") el.innerHTML = viewGrades();
   else if (state.tab === "work") el.innerHTML = viewWork();
   else el.innerHTML = viewMe();
+  playScreen(anim);
   wire();
   // The what-if card can only be filled once its container is in the DOM.
   if (state.course != null) renderWhatIf(state.course, Number($("#whatif")?.value || 85));
+  const gpaEl = $("#gpa-num");
+  if (gpaEl) countUp(gpaEl, Number(gpaEl.dataset.to));
 }
 
 function wire() {
   document.querySelectorAll("[data-course]").forEach((el) => {
     el.addEventListener("click", () => {
       state.course = Number(el.dataset.course);
-      draw(); window.scrollTo(0, 0);
+      draw("push"); window.scrollTo(0, 0);
     });
   });
   const back = $("#back");
-  if (back) back.addEventListener("click", () => { state.course = null; draw(); window.scrollTo(0, 0); });
+  if (back) back.addEventListener("click", () => { state.course = null; draw("pop"); window.scrollTo(0, 0); });
   const slider = $("#whatif");
-  if (slider) slider.addEventListener("input", () => renderWhatIf(state.course, Number(slider.value)));
+  if (slider) slider.addEventListener("input", () => {
+    renderWhatIf(state.course, Number(slider.value));
+    const n = $(".whatif-a .n");
+    if (n && !REDUCED()) { n.classList.remove("pulse"); void n.offsetWidth; n.classList.add("pulse"); }
+  });
   document.querySelectorAll("#mode button").forEach((b) =>
-    b.addEventListener("click", () => { setTheme({ mode: b.dataset.mode }); draw(); }));
+    b.addEventListener("click", () => { setTheme({ mode: b.dataset.mode }); draw("none"); }));
   document.querySelectorAll("#accents .swatch").forEach((b) =>
-    b.addEventListener("click", () => { setTheme({ accent: b.dataset.accent }); draw(); }));
+    b.addEventListener("click", () => { setTheme({ accent: b.dataset.accent }); draw("none"); }));
 
   const out = $("#signout");
   if (out) out.addEventListener("click", signOut);
@@ -480,7 +524,7 @@ function viewGrades() {
     <div class="standing-hero">
       <div class="sec-label" style="margin-top:0">Where you stand</div>
       ${weighted != null ? `<div class="gpa-big">
-          <div class="n">${Number(weighted).toFixed(2)}</div>
+          <div class="n" id="gpa-num" data-to="${Number(weighted)}">0.00</div>
           <div class="u">weighted<br>GPA</div>
         </div>
         <div class="scale"><span class="dot" style="left:${Math.max(0, Math.min(100, (Number(weighted) / 5) * 100))}%"></span></div>`

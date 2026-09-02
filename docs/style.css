@@ -381,3 +381,109 @@ input[type="range"]::-moz-range-thumb { width: 21px; height: 21px; border-radius
   border-left: 2.5px solid #0b0d14; border-bottom: 2.5px solid #0b0d14;
   transform: rotate(-45deg) translate(1px, -1px);
 }
+
+/* ================= motion ================= */
+
+/* Background: fixed behind everything, never intercepts taps. */
+.bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.bg span {
+  position: absolute; display: block; border-radius: 50%;
+  /* Soft alpha falloff instead of a blur filter -- same look, far cheaper. */
+  background: radial-gradient(circle closest-side, var(--accent-soft), transparent 72%);
+}
+/* Promote a layer only while something is actually moving on it. */
+@media (prefers-reduced-motion: no-preference) {
+  .bg span { will-change: transform; }
+}
+.bg span:nth-child(1) { width: 96vw;  height: 96vw;  top: -32vw; left: -26vw; animation: drift-a 34s ease-in-out infinite; }
+.bg span:nth-child(2) { width: 82vw;  height: 82vw;  top: 30vh;  right: -30vw; animation: drift-b 44s ease-in-out infinite; }
+.bg span:nth-child(3) { width: 74vw;  height: 74vw;  bottom: -24vw; left: 6vw; animation: drift-c 39s ease-in-out infinite; }
+
+@keyframes drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%      { transform: translate3d(7vw, 5vh, 0) scale(1.09); }
+  66%      { transform: translate3d(-4vw, 9vh, 0) scale(.96); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  40%      { transform: translate3d(-9vw, -7vh, 0) scale(1.12); }
+  75%      { transform: translate3d(3vw, 6vh, 0) scale(.94); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.04); }
+  50%      { transform: translate3d(8vw, -6vh, 0) scale(.93); }
+}
+
+/* Content rides above the background. */
+.app, .login-wrap { position: relative; z-index: 1; }
+
+/* Screen transitions. The class is re-applied after a forced reflow so it replays. */
+@keyframes screen-fade { from { opacity: 0; transform: translate3d(0, 10px, 0); } }
+@keyframes screen-push { from { opacity: 0; transform: translate3d(26px, 0, 0); } }
+@keyframes screen-pop  { from { opacity: 0; transform: translate3d(-26px, 0, 0); } }
+
+#screen.anim-fade { animation: screen-fade .26s cubic-bezier(.22,.68,.28,1) both; }
+#screen.anim-push { animation: screen-push .27s cubic-bezier(.22,.68,.28,1) both; }
+#screen.anim-pop  { animation: screen-pop  .27s cubic-bezier(.22,.68,.28,1) both; }
+
+/* List entrances, staggered in CSS so there's no per-row JS. */
+@keyframes rise { from { opacity: 0; transform: translate3d(0, 12px, 0); } }
+.rows .row, .items .item, .donuts .donut, .periods .period, .mini .b, .card, .nudge {
+  animation: rise .3s cubic-bezier(.22,.68,.28,1) both;
+}
+.rows .row:nth-child(1), .items .item:nth-child(1), .donuts .donut:nth-child(1), .periods .period:nth-child(1), .mini .b:nth-child(1) { animation-delay: .02s; }
+.rows .row:nth-child(2), .items .item:nth-child(2), .donuts .donut:nth-child(2), .periods .period:nth-child(2), .mini .b:nth-child(2) { animation-delay: .06s; }
+.rows .row:nth-child(3), .items .item:nth-child(3), .donuts .donut:nth-child(3), .periods .period:nth-child(3) { animation-delay: .10s; }
+.rows .row:nth-child(4), .items .item:nth-child(4), .donuts .donut:nth-child(4), .periods .period:nth-child(4) { animation-delay: .14s; }
+.rows .row:nth-child(5), .items .item:nth-child(5), .donuts .donut:nth-child(5) { animation-delay: .18s; }
+.rows .row:nth-child(6), .items .item:nth-child(6), .donuts .donut:nth-child(6) { animation-delay: .22s; }
+.rows .row:nth-child(n+7), .items .item:nth-child(n+7), .donuts .donut:nth-child(n+7) { animation-delay: .26s; }
+
+/* Rings and trend lines draw themselves in. pathLength="1" normalises every path so
+   one dashoffset animation fits all of them. */
+@keyframes ring-draw { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+.ring-arc { animation: ring-draw .72s cubic-bezier(.3,.7,.3,1) both; }
+
+@keyframes path-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.draw-path { stroke-dasharray: 1; animation: path-draw .8s cubic-bezier(.3,.7,.3,1) both; }
+.spark .draw-path { animation-duration: .6s; }
+
+/* Tap feedback. */
+.row, .donut, .nudge, .period, .btn, .tab, .swatch, .seg button, .back {
+  transition: transform .13s ease, background-color .18s ease, border-color .18s ease, opacity .18s ease;
+}
+.row:active, .donut:active, .nudge:active, .btn:active, .seg button:active { transform: scale(.975); }
+.swatch:active { transform: scale(.92); }
+.tab:active { transform: scale(.9); }
+.back:active { opacity: .55; }
+
+/* The active tab's icon lifts slightly. */
+.tab .ico { transition: transform .22s cubic-bezier(.34,1.4,.5,1); }
+.tab.on .ico { transform: translateY(-2px) scale(1.06); }
+
+/* Theme changes cross-fade rather than snapping. Added by JS after first paint so the
+   initial render doesn't animate from the wrong palette. */
+.theme-anim body, body.theme-anim,
+body.theme-anim .card, body.theme-anim .row, body.theme-anim .donut,
+body.theme-anim .period, body.theme-anim .login-card, body.theme-anim .mini .b,
+body.theme-anim .tabbar, body.theme-anim .chip, body.theme-anim .seg {
+  transition: background-color .3s ease, border-color .3s ease, color .3s ease;
+}
+
+/* Login card entrance, and the numbers that tick up. */
+@keyframes card-in { from { opacity: 0; transform: translate3d(0, 16px, 0) scale(.98); } }
+.login-card { animation: card-in .38s cubic-bezier(.22,.68,.28,1) both; }
+
+@keyframes pulse-num { 50% { transform: scale(1.05); } }
+.pulse { animation: pulse-num .22s ease; }
+
+/* Anyone who has asked their phone to calm down gets a still page. */
+@media (prefers-reduced-motion: reduce) {
+  .bg span { animation: none !important; }
+  #screen, .rows .row, .items .item, .donuts .donut, .periods .period, .mini .b,
+  .card, .nudge, .login-card, .ring-arc, .draw-path, .pulse {
+    animation: none !important;
+  }
+  .draw-path { stroke-dasharray: none; }
+  * { transition-duration: .01ms !important; }
+}

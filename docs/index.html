@@ -16,6 +16,10 @@
 </head>
 <body>
 
+  <!-- Drifting background. Three soft radial blobs, animated with transform only --
+       no filter, which Safari would have to re-rasterise every frame. -->
+  <div class="bg" aria-hidden="true"><span></span><span></span><span></span></div>
+
   <div class="login-wrap" id="login">
     <form class="login-card" id="login-form" autocomplete="on">
       <div class="brand"><span class="mark"></span> Curve</div>
