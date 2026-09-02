@@ -1,5 +1,7 @@
 # PowerSchool Dashboard
-
+ 
+ https://awakenedsniper78-beep.github.io/powerschool/
+ 
 A better-looking frontend for the PowerSchool guardian portal. Runs entirely on your
 machine — your credentials and grades never leave it.
 
