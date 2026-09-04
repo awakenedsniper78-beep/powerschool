@@ -487,3 +487,97 @@ body.theme-anim .tabbar, body.theme-anim .chip, body.theme-anim .seg {
   .draw-path { stroke-dasharray: none; }
   * { transition-duration: .01ms !important; }
 }
+
+/* ================= wide screens =================
+   Keyed off window width, not the user agent. A laptop, an iPad, a half-screen Safari
+   window and a phone in landscape all want the layout that fits the space they actually
+   have, and a UA string can't tell you that. Resizing the window re-lays-out live. */
+
+/* Tablet and up: content breathes, the grid columns loosen. */
+@media (min-width: 700px) {
+  main { padding: 26px 32px 40px; max-width: 860px; }
+  .headline { font-size: 30px; }
+  .detail-h { font-size: 34px; }
+  .donuts { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+  .periods { grid-auto-columns: minmax(0, 1fr); }
+  .gpa-big .n { font-size: 74px; }
+}
+
+/* Laptop and up: the bottom tab bar becomes a left sidebar and the page fills out. */
+@media (min-width: 980px) {
+  .app {
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    padding-bottom: 0;
+    min-height: 100dvh;
+  }
+
+  .tabbar {
+    grid-column: 1; grid-row: 1;
+    position: sticky; top: 0; bottom: auto; left: auto; right: auto;
+    height: 100dvh; align-content: start; gap: 4px;
+    grid-template-columns: none; grid-auto-rows: max-content;
+    padding: 28px 16px; margin: 0; max-width: none;
+    border: none; border-right: 1px solid var(--line); border-radius: 0;
+    background: transparent; backdrop-filter: none;
+  }
+  .tab {
+    flex-direction: row; justify-content: flex-start; gap: 13px;
+    padding: 11px 14px; border-radius: 11px; font-size: 15px; font-weight: 600;
+  }
+  .tab.on { background: var(--accent-soft); }
+  .tab.on .ico { transform: none; }
+  .tab .ico { width: 19px; height: 19px; }
+
+  main { grid-column: 2; grid-row: 1; padding: 38px 44px 64px; max-width: 1140px; margin: 0; }
+
+  /* Two columns where the content genuinely splits in two. */
+  .panes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 34px; align-items: start; }
+  .panes .pane .sec-label:first-child,
+  .panes .pane .group-h:first-child { margin-top: 0; }
+  .panes .chart { margin-top: 0; }
+  .chart svg { height: 118px; }
+
+  /* The header spans the full width here, so the auto-margin flung "x pts from B-"
+     to the far edge, away from the number it describes. */
+  .detail-grade { max-width: 560px; }
+  /* There's room for the trend to actually read at this size. */
+  .row .spark { width: 118px; height: 26px; }
+  .donuts { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .standing-hero { border-radius: 22px; margin: 0; padding: 28px 30px 30px; }
+  .mini { grid-template-columns: repeat(4, 1fr); }
+  .seg { max-width: 420px; }
+
+  /* No touch here, so give the pointer something to react to. */
+  .row:hover, .donut:hover, .nudge:hover, .period:hover { background: var(--card-2); }
+  .row { padding-left: 12px; padding-right: 12px; border-radius: 10px; }
+  .tab:hover:not(.on) { background: var(--card); }
+  .swatch:hover { transform: scale(1.06); }
+}
+
+/* Very wide: cap the reading width rather than stretching rows across a 27in display. */
+@media (min-width: 1500px) {
+  main { max-width: 1280px; }
+}
+
+/* Phone in landscape: short and wide. Trim the vertical rhythm so the header and the
+   first rows still share the screen. */
+@media (max-height: 480px) and (orientation: landscape) {
+  main { padding-top: 14px; }
+  .headline { font-size: 21px; }
+  .sec-label { margin-top: 18px; }
+  .periods .period { min-height: 62px; }
+}
+
+/* Stale-data warning. The sync runs twice a day, so a gap means a run failed --
+   showing old grades as if they were current is worse than saying so. */
+.chip.stale { color: var(--warn); border-color: var(--warn); }
+.warn-bar {
+  margin: 0 0 18px; padding: 12px 15px; border-radius: 12px; font-size: 13.5px;
+  line-height: 1.5; color: var(--text);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+}
+@supports not (color: color-mix(in srgb, red 10%, transparent)) {
+  .warn-bar { background: var(--card); border-color: var(--warn); }
+}

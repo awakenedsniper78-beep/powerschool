@@ -403,12 +403,35 @@ function wire() {
 
 function courses() { return state.data?.courses || []; }
 
+/** Hours since the last successful sync, or null if we can't tell. */
+function hoursStale() {
+  const at = state.data?.scraped_at;
+  if (!at) return null;
+  const then = new Date(at);
+  if (isNaN(then)) return null;
+  return (Date.now() - then.getTime()) / 36e5;
+}
+
 function header() {
   const at = state.data?.scraped_at;
+  const stale = hoursStale();
+  // The sync runs twice a day, so anything past ~18h means a run failed. Without this
+  // the page just shows old grades as though they were current.
+  const old = stale != null && stale > 18;
   return `<div class="topline">
     <div class="brand"><span class="mark"></span> Curve</div>
-    ${at ? `<span class="chip">synced ${esc(fmtWhen(at))}</span>` : ""}
-  </div>`;
+    ${at ? `<span class="chip ${old ? "stale" : ""}">${old ? "⚠ " : ""}synced ${esc(fmtWhen(at))}</span>` : ""}
+  </div>
+  ${old ? `<div class="warn-bar">
+      These grades are <strong>${esc(agoText(stale))} old</strong>. The twice-daily sync
+      hasn't succeeded since then — the school portal has been refusing the automatic
+      check-in. Everything below is real, just not current.
+    </div>` : ""}`;
+}
+
+function agoText(hours) {
+  if (hours < 48) return `${Math.round(hours)} hours`;
+  return `${Math.round(hours / 24)} days`;
 }
 
 function viewToday() {
@@ -560,6 +583,8 @@ function viewCourse(i) {
       ${next ? `<div class="gap">${next.gap} pts from ${esc(next.letter)}</div>` : ""}
     </div>
 
+    <div class="panes">
+    <div class="pane">
     <div class="chart">${lineChart(series)}
       ${series.length > 1 ? `<div class="chart-x">
         <span>${esc(fmtDate(series[0].date))}</span><span>today</span></div>` : ""}</div>
@@ -571,9 +596,13 @@ function viewCourse(i) {
       <div class="range-x"><span>40%</span><span>100%</span></div>
       <p class="note" id="whatif-note"></p>
     </div>
+    </div>
 
+    <div class="pane">
     <div class="sec-label">What's moving it <span class="link">${items.length} items</span></div>
-    <div class="items">${items.map(itemRow).join("") || `<div class="empty">No assignments listed.</div>`}</div>`;
+    <div class="items">${items.map(itemRow).join("") || `<div class="empty">No assignments listed.</div>`}</div>
+    </div>
+    </div>`;
 }
 
 function itemRow(a) {
@@ -670,12 +699,18 @@ function viewWork() {
   return `${header()}
     <h1 class="headline">Work</h1>
     <p class="underline">${missing.length} missing · ${soon.length} coming up</p>
-    <div class="group-h">Missing</div>
-    <div class="items">${missing.map((a) => line(a, "missing")).join("")
-      || `<div class="empty">Nothing missing. Nice.</div>`}</div>
-    <div class="group-h">Coming up</div>
-    <div class="items">${soon.slice(0, 20).map((a) => line(a, "soon")).join("")
-      || `<div class="empty">Nothing upcoming.</div>`}</div>`;
+    <div class="panes">
+      <div class="pane">
+        <div class="group-h">Missing</div>
+        <div class="items">${missing.map((a) => line(a, "missing")).join("")
+          || `<div class="empty">Nothing missing. Nice.</div>`}</div>
+      </div>
+      <div class="pane">
+        <div class="group-h">Coming up</div>
+        <div class="items">${soon.slice(0, 20).map((a) => line(a, "soon")).join("")
+          || `<div class="empty">Nothing upcoming.</div>`}</div>
+      </div>
+    </div>`;
 }
 
 function viewMe() {

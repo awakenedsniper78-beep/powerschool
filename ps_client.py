@@ -18,6 +18,7 @@ So logging in is an ordinary HTML form POST. That's all this file does.
 
 import os
 import sys
+import time
 
 import requests
 from dotenv import load_dotenv
@@ -40,6 +41,34 @@ BROWSER_UA = (
 
 class LoginError(RuntimeError):
     """Raised when we can't get an authenticated session."""
+
+
+# Imperva doesn't refuse a request it dislikes -- it holds the connection open until it
+# times out. From a datacenter IP (a GitHub Actions runner) that happens far more often
+# than from a home connection, so be patient and try again before giving up.
+TIMEOUT = 60
+ATTEMPTS = 3
+BACKOFF = (0, 5, 15)
+
+
+def _with_retries(what, fn):
+    """Run a request, retrying timeouts and dropped connections with a backoff."""
+    last = None
+    for attempt in range(ATTEMPTS):
+        if BACKOFF[attempt]:
+            time.sleep(BACKOFF[attempt])
+        try:
+            return fn()
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as err:
+            last = err
+            print(f"  {what}: attempt {attempt + 1} of {ATTEMPTS} timed out")
+    raise LoginError(
+        f"{what} timed out {ATTEMPTS} times ({TIMEOUT}s each).\n"
+        "The portal is behind Imperva bot protection, which tends to stall requests "
+        "from datacenter IPs like GitHub's runners rather than refusing them outright.\n"
+        "Workarounds: run `python sync.py` from your own computer, or paste a fresh "
+        "JSESSIONID into the PS_COOKIE secret."
+    ) from last
 
 
 class PowerSchoolClient:
@@ -70,7 +99,8 @@ class PowerSchoolClient:
 
         # Step 1: load the login page first. This gets us the initial JSESSIONID and the
         # Imperva cookies. Posting credentials without these looks like a bot.
-        self.session.get(f"{self.base_url}/public/home.html", timeout=30)
+        _with_retries("Loading the sign-in page",
+                      lambda: self.session.get(f"{self.base_url}/public/home.html", timeout=TIMEOUT))
 
         # Step 2: post the form. These field names were read off the real login page.
         # `pw` and `dbpw` both carry the password (that's what doPCASLogin does), and
@@ -89,12 +119,12 @@ class PowerSchoolClient:
             "pcasServerUrl": "/",
             "credentialType": "User Id and Password Credential",
         }
-        resp = self.session.post(
+        resp = _with_retries("Signing in", lambda: self.session.post(
             f"{self.base_url}/guardian/home.html",
             data=payload,
             headers={"Referer": f"{self.base_url}/public/home.html"},
-            timeout=30,
-        )
+            timeout=TIMEOUT,
+        ))
 
         # PowerSchool returns HTTP 200 whether or not login worked -- on failure it just
         # re-renders the login page. So we check the *content*, not the status code.
@@ -114,14 +144,16 @@ class PowerSchoolClient:
     def get(self, path):
         """Fetch an authenticated page, e.g. client.get('/guardian/home.html')."""
         url = path if path.startswith("http") else f"{self.base_url}/{path.lstrip('/')}"
-        resp = self.session.get(url, timeout=30)
+        resp = _with_retries(f"Fetching {path}",
+                             lambda: self.session.get(url, timeout=TIMEOUT))
         resp.raise_for_status()
         if not _looks_authenticated(resp.text):
             raise LoginError(f"Session expired while fetching {path}")
         return resp.text
 
     def _is_logged_in(self):
-        resp = self.session.get(f"{self.base_url}/guardian/home.html", timeout=30)
+        resp = _with_retries("Checking the session",
+                             lambda: self.session.get(f"{self.base_url}/guardian/home.html", timeout=TIMEOUT))
         return _looks_authenticated(resp.text)
 
 
