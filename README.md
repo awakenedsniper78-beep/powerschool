@@ -1,31 +1,31 @@
 # PowerSchool Dashboard
  
  https://awakenedsniper78-beep.github.io/powerschool/
- Setup Your Own Grade Dashboard
 
-This project allows you to scrape your own PowerSchool grades and host them on a private, encrypted website. Your data is encrypted on your own computer before it ever touches the internet, meaning only you (and anyone you give the password to) can see your grades.
+# 🎓 Setup Your Own Grade Dashboard
 
-🛠 Prerequisites
+This project allows you to scrape your own PowerSchool grades and host them on a private, encrypted website. **Your data is encrypted on your own computer before it ever touches the internet**, meaning only you (and anyone you give the password to) can see your grades.
 
+## 🛠 Prerequisites
 Before you start, make sure you have these installed:
+*   **Python 3.10+** (Download from [python.org](https://www.python.org/))
+*   **A GitHub Account** (To host your website)
+*   **Git** (To upload your code)
 
-Python 3.10+ (Download from python.org)
-A GitHub Account (To host your website)
-Git (To upload your code)
-🚀 Step-by-Step Setup
-1. Get the Code
+---
 
+## 🚀 Step-by-Step Setup
+
+### 1. Get the Code
 Open your terminal or command prompt and run:
-
+```bash
 git clone https://github.com/awakenedsniper78-beep/powerschool.git
 cd powerschool
 2. Install Dependencies
-
 Install the necessary libraries to make the scraper and encryption work:
 
 pip install -r requirements.txt
 3. Configure Your Login
-
 You need to tell the app how to log into your school's portal.
 
 Find the file named .env.example and rename it to .env.
@@ -34,26 +34,21 @@ PS_BASE_URL: Your school's PowerSchool URL (e.g., https://yourdistrict.powerscho
 PS_USERNAME: Your PowerSchool username.
 PS_PASSWORD: Your PowerSchool password.
 4. Scrape Your Grades
-
 Run the scraper to fetch your current grades from the portal:
 
 python scrape.py
-
 This will create a file called cache.json containing your grades. This file stays on your computer and is NOT uploaded to the web.
 
 5. Encrypt and Publish
-
 Now, you will lock your data with a password so it can be safely put on the internet:
 
 python publish.py
-
 ⚠️ IMPORTANT: The app will ask you to pick a Username and Password.
 
 This is NOT your PowerSchool password.
 This is a NEW password that you will use to unlock your website.
 Write this password down! If you lose it, you cannot recover your data.
 6. Host Your Website
-
 Finally, upload your encrypted data to your own GitHub account:
 
 Create a new repository on GitHub named my-grades.
