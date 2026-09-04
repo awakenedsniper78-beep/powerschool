@@ -14,8 +14,8 @@ name: Update grades
 
 on:
   schedule:
-    # Every day at 11:00 and 23:00 UTC (7am and 7pm Eastern).
-    - cron: "0 11,23 * * *"
+    # Every six hours.
+    - cron: "0 */6 * * *"
   # Adds a "Run workflow" button, which works from the GitHub site in Safari.
   workflow_dispatch:
 
@@ -47,6 +47,10 @@ jobs:
           PS_BASE_URL: https://birmingham.powerschool.com
           PS_USERNAME: ${{ secrets.PS_USERNAME }}
           PS_PASSWORD: ${{ secrets.PS_PASSWORD }}
+          # Optional. If the portal's bot protection blocks the runner's IP, a fresh
+          # JSESSIONID copied from a browser gets these runs working again until it
+          # expires. ps_client prefers it over the username/password path.
+          PS_COOKIE: ${{ secrets.PS_COOKIE }}
           DASH_USERNAME: ${{ secrets.DASH_USERNAME }}
           DASH_PASSWORD: ${{ secrets.DASH_PASSWORD }}
         run: python sync.py
