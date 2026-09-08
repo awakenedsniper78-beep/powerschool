@@ -24,7 +24,7 @@ python setup.py
 
 `setup.py` does everything below for you: installs the dependencies, asks for your
 PowerSchool login and the username and password you want for the website, checks that
-the login works, does a first sync, and schedules it to repeat **every six hours**.
+the login works, does a first sync, and schedules it to repeat **every three hours**.
 Re-running it is safe — it keeps whatever is already configured and only asks about
 what's missing.
 

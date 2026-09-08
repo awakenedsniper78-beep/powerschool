@@ -1,5 +1,5 @@
 """
-Run the grade sync every six hours on this computer.
+Run the grade sync every three hours on this computer.
 
     python install_schedule.py            # set it up
     python install_schedule.py --remove   # undo it
@@ -28,8 +28,8 @@ MARKER = "# curve-grade-sync"
 
 
 def cron_line():
-    """Every six hours, on the hour, logging to sync.log so failures aren't invisible."""
-    return (f'0 */6 * * * cd "{HERE}" && "{sys.executable}" "{SYNC}" '
+    """Every three hours, on the hour, logging to sync.log so failures aren't invisible."""
+    return (f'0 */3 * * * cd "{HERE}" && "{sys.executable}" "{SYNC}" '
             f'>> "{LOG}" 2>&1  {MARKER}')
 
 
@@ -61,7 +61,7 @@ def install_cron(dry_run):
     if dry_run:
         return print("(dry run -- nothing changed)")
     write_crontab(updated)
-    print("Installed. It runs at 00:00, 06:00, 12:00 and 18:00 local time.")
+    print("Installed. It runs every three hours, on the hour, local time.")
 
 
 def remove_cron(dry_run):
@@ -79,7 +79,7 @@ def windows(dry_run, remove):
     if remove:
         cmd = ["schtasks", "/Delete", "/TN", TASK_NAME, "/F"]
     else:
-        cmd = ["schtasks", "/Create", "/TN", TASK_NAME, "/SC", "HOURLY", "/MO", "6",
+        cmd = ["schtasks", "/Create", "/TN", TASK_NAME, "/SC", "HOURLY", "/MO", "3",
                "/TR", f'cmd /c cd /d "{HERE}" && "{sys.executable}" "{SYNC}" >> "{LOG}" 2>&1',
                "/F"]
     print("Running:\n\n  " + " ".join(cmd) + "\n")
@@ -88,7 +88,7 @@ def windows(dry_run, remove):
     done = subprocess.run(cmd, capture_output=True, text=True)
     if done.returncode:
         sys.exit(f"schtasks failed:\n{done.stdout}{done.stderr}")
-    print("Done." if remove else "Installed. It runs every six hours.")
+    print("Done." if remove else "Installed. It runs every three hours.")
 
 
 def check_ready():

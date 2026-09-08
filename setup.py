@@ -4,7 +4,7 @@ Set this up on a new computer, start to finish.
     python setup.py
 
 Installs the dependencies, asks for the four things it needs, checks the login actually
-works, does a first sync, and schedules it to repeat every six hours. Re-running it is
+works, does a first sync, and schedules it to repeat every three hours. Re-running it is
 safe: it keeps whatever is already configured and only asks about what's missing.
 
 Nothing typed here leaves this computer. Credentials go into .env, which is gitignored;
@@ -138,13 +138,13 @@ def main():
         sys.exit("\nThe sync failed -- see the error above. Once it's fixed, run:\n"
                  "  python sync.py\n  python install_schedule.py")
 
-    step(5, "Scheduling it every six hours")
+    step(5, "Scheduling it every three hours")
     if not run("installing the schedule",
                [sys.executable, os.path.join(HERE, "install_schedule.py")]):
         print("  couldn't schedule it automatically. Run this yourself:\n"
               "    python install_schedule.py")
 
-    print("\n\033[1mAll set.\033[0m Your grades refresh every six hours while this "
+    print("\n\033[1mAll set.\033[0m Your grades refresh every three hours while this "
           "computer is awake.")
     print(f"Sign in at your site with the username and password you chose in step 2.")
 

@@ -14,8 +14,8 @@ name: Update grades
 
 on:
   schedule:
-    # Every six hours.
-    - cron: "0 */6 * * *"
+    # Every three hours.
+    - cron: "0 */3 * * *"
   # Adds a "Run workflow" button, which works from the GitHub site in Safari.
   workflow_dispatch:
 
