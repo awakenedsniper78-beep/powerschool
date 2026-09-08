@@ -11,15 +11,18 @@ trying to log in on its own.
 It expires -- hours to a few days -- and then the sync starts failing and the site shows
 its stale warning. Run this again to hand it a fresh one.
 
-Where to find it (Chrome or Edge on Windows):
-  1. Sign in to the portal in your browser so you can see your grades.
-  2. Press F12 to open DevTools.
-  3. Go to the Application tab (>> if it's hidden).
-  4. In the left sidebar: Storage -> Cookies -> the portal's address.
-  5. Find the row named JSESSIONID and copy the long value next to it.
+Where to find it:
+  1. Open your SCHOOL PORTAL in a browser -- the address bar must show
+     powerschool.com -- and sign in so you can see your grades. The cookie only
+     exists on the portal's own domain, so this will not work from any other tab.
+  2. Press F12 on that tab.
+  3. Firefox: the "Storage" tab.  Chrome or Edge: the "Application" tab.
+     (Look behind >> if you can't see it.)
+  4. In the left sidebar: Cookies -> the portal's address.
+  5. Find the row named JSESSIONID and copy its Value column.
 
-Safari on Mac: enable Develop in Settings -> Advanced, then Develop -> Show Web
-Inspector -> Storage -> Cookies.
+Safari on Mac: Settings -> Advanced -> tick "Show features for web developers",
+then Develop -> Show Web Inspector -> Storage -> Cookies.
 """
 
 import getpass
