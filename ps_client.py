@@ -29,6 +29,13 @@ BASE_URL = os.getenv("PS_BASE_URL", "https://birmingham.powerschool.com").rstrip
 USERNAME = os.getenv("PS_USERNAME", "")
 PASSWORD = os.getenv("PS_PASSWORD", "")
 COOKIE = os.getenv("PS_COOKIE", "").strip()
+# The whole Cookie header from a signed-in browser, plus the User-Agent that earned it.
+# JSESSIONID on its own is not enough here: Imperva issues cookies of its own
+# (visid_incap_*, incap_ses_*) that prove its challenge was passed, and without them it
+# blocks the request before PowerSchool ever sees the session. Sessions are also
+# commonly bound to the User-Agent, so it has to match the browser the cookies came from.
+COOKIE_HEADER = os.getenv("PS_COOKIE_HEADER", "").strip()
+USER_AGENT = os.getenv("PS_USER_AGENT", "").strip()
 
 # The portal sits behind Imperva (a bot-protection CDN). Sending a realistic browser
 # User-Agent makes it far less likely to challenge us. We are not evading anything --
@@ -77,17 +84,33 @@ class PowerSchoolClient:
         # A Session is the important bit: it remembers cookies across requests, so once
         # we log in, every later .get() is automatically authenticated.
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": BROWSER_UA})
+        self.session.headers.update({"User-Agent": USER_AGENT or BROWSER_UA})
 
     def login(self):
         """Get an authenticated session, either by posting the form or reusing a cookie."""
+        if COOKIE_HEADER:
+            # Preferred fallback: every cookie the browser holds for this site, sent
+            # verbatim, so Imperva's cookies travel with the PowerSchool session.
+            self.session.headers["Cookie"] = COOKIE_HEADER
+            if not self._is_logged_in():
+                raise LoginError(
+                    "The browser session in PS_COOKIE_HEADER isn't valid any more.\n"
+                    "Sessions last hours, not days. Run `python set_cookie.py` again "
+                    "with a fresh copy."
+                )
+            return self
+
         if COOKIE:
-            # Fallback path: user pasted a JSESSIONID from their browser into .env.
+            # Older fallback: a bare JSESSIONID. Kept for portals with no bot
+            # protection in front of them, but behind Imperva it fails on its own --
+            # set_cookie.py captures the full header instead.
             self.session.cookies.set("JSESSIONID", COOKIE, domain=_host(self.base_url))
             if not self._is_logged_in():
                 raise LoginError(
-                    "PS_COOKIE was set but the session isn't valid. It has probably "
-                    "expired -- grab a fresh JSESSIONID from your browser."
+                    "PS_COOKIE was set but the session isn't valid.\n"
+                    "Behind Imperva a bare JSESSIONID is not enough on its own -- its "
+                    "own cookies have to travel with it.\n"
+                    "Run `python set_cookie.py` to capture the whole browser session."
                 )
             return self
 
