@@ -36,15 +36,22 @@ def scrape_all(save_html=False):
 
     # Follow each course's link to pull its assignments.
     for course in courses:
-        if not course.get("link"):
+        link = course.get("link") or _any_term_link(course)
+        if not link:
+            # Record why rather than leaving an empty list that looks like "no homework".
+            course["assignments_note"] = "The portal didn't give a link to this course's assignments."
             continue
         try:
             time.sleep(DELAY_SECONDS)
-            course["assignments"] = parse_assignments(client.get(_resolve(course["link"])))
+            course["assignments"] = parse_assignments(client.get(_resolve(link)))
+            if not course["assignments"]:
+                course["assignments_note"] = (
+                    "Opened this course's assignments page but found no rows on it.")
         except Exception as err:
             # One bad course page shouldn't kill the whole scrape.
             print(f"  ! couldn't read assignments for {course['name']}: {err}")
             course["assignments"] = []
+            course["assignments_note"] = f"Couldn't open the assignments page: {err}"
 
     data = {
         "student": {"name": _student_name(home_html), "school": ""},
@@ -59,6 +66,14 @@ def scrape_all(save_html=False):
         "courses": courses,
     }
     return data
+
+
+def _any_term_link(course):
+    """Some builds only hang the assignments link off one term's cell."""
+    for cell in (course.get("terms") or {}).values():
+        if (cell or {}).get("link"):
+            return cell["link"]
+    return None
 
 
 def _resolve(link):

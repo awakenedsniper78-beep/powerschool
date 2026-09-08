@@ -72,10 +72,18 @@ def _term_names(header_row):
     return [l for l in labels if re.fullmatch(r"(Q|S|T|F)\d|Y\d?", l)]
 
 
+def _usable_href(tag):
+    """An href we can actually fetch, or None. "#" and javascript: handlers are links
+    that go nowhere -- treating them as real is how assignments silently vanish."""
+    href = (tag.get("href") or "").strip() if tag else ""
+    if not href or href == "#" or href.lower().startswith("javascript:"):
+        return None
+    return href
+
+
 def _parse_grade_cell(cell):
     """Extract letter grade, percent, and the assignments link from one grade cell."""
-    link = cell.find("a")
-    href = link.get("href") if link else None
+    href = _usable_href(cell.find("a"))
     text = _clean(cell.get_text(" ", strip=True))
 
     if text in NO_GRADE:
@@ -145,7 +153,8 @@ def parse_assignments(html):
     for candidate in soup.find_all("table"):
         headers = [_clean(c.get_text(" ", strip=True)).lower()
                    for c in candidate.find_all(["th", "td"], limit=12)]
-        if any("due" in h for h in headers) and any("score" in h or "pts" in h for h in headers):
+        scoreish = ("score", "pts", "points", "grd", "grade", "%")
+        if any("due" in h for h in headers) and any(k in h for h in headers for k in scoreish):
             table = candidate
             break
     if table is None:

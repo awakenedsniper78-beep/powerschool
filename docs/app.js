@@ -600,7 +600,9 @@ function viewCourse(i) {
 
     <div class="pane">
     <div class="sec-label">What's moving it <span class="link">${items.length} items</span></div>
-    <div class="items">${items.map(itemRow).join("") || `<div class="empty">No assignments listed.</div>`}</div>
+    <div class="items">${items.map(itemRow).join("")
+      || `<div class="empty">${esc(c.assignments_note
+           || "No assignments listed for this course.")}</div>`}</div>
     </div>
     </div>`;
 }
