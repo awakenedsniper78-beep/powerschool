@@ -14,6 +14,25 @@ Before you start, make sure you have these installed:
 
 ---
 
+## ⚡ Quick Setup (one command)
+
+```bash
+git clone https://github.com/awakenedsniper78-beep/powerschool.git
+cd powerschool
+python setup.py
+```
+
+`setup.py` does everything below for you: installs the dependencies, asks for your
+PowerSchool login and the username and password you want for the website, checks that
+the login works, does a first sync, and schedules it to repeat **every six hours**.
+Re-running it is safe — it keeps whatever is already configured and only asks about
+what's missing.
+
+Nothing typed there leaves your computer. Credentials go into `.env`, which is gitignored
+and written owner-readable only.
+
+The steps below are the same thing done by hand, if you'd rather see each part.
+
 ## 🚀 Step-by-Step Setup
 
 ### 1. Get the Code
@@ -43,6 +62,9 @@ This will create a file called cache.json containing your grades. This file stay
 Now, you will lock your data with a password so it can be safely put on the internet:
 
 python publish.py
+(Or `python sync.py`, which scrapes, encrypts, commits and pushes in one go — that's
+what the six-hourly schedule runs.)
+
 ⚠️ IMPORTANT: The app will ask you to pick a Username and Password.
 
 This is NOT your PowerSchool password.
@@ -60,7 +82,8 @@ git push origin main
 Enable the Website:
 Go to your GitHub repository $\rightarrow$ Settings $\rightarrow$ Pages.
 Under "Build and deployment," set the source to Deploy from a branch.
-Select the main branch and the /(root) folder.
+Select the main branch and the **/docs** folder — the site lives in `docs/`, so
+publishing from the root would serve no page.
 Click Save.
 🔓 How to View Your Grades
 Wait about 1-2 minutes for GitHub to build your site.
