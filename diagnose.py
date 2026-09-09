@@ -172,6 +172,29 @@ def main():
             print(f"    {path}   (from {src.rsplit('/', 1)[-1][:34]})")
         if not hits and local:
             print("    none matched -- the URL is probably built from string fragments")
+
+        # Show how the bundle talks about assignments. This is the vendor's own
+        # minified code, not anybody's data, so a short window around each mention is
+        # safe to print and is what reveals how the request is assembled.
+        print("\n  how the bundles mention assignments:")
+        shown = 0
+        for src in local:
+            if shown >= 8:
+                break
+            try:
+                js = client.get(src if src.startswith("/") else f"/guardian/{src}")
+            except Exception:
+                continue
+            for m in re.finditer(r"assignment", js, re.I):
+                a, b = max(0, m.start() - 70), min(len(js), m.end() + 70)
+                window = re.sub(r"\s+", " ", js[a:b])
+                # Only windows that look like they involve a URL or an http call.
+                if not re.search(r"(/ws/|/guardian/|\.json|http|url|get\(|post\()", window, re.I):
+                    continue
+                print(f"    [{src.rsplit('/', 1)[-1][:26]}] ...{window}...")
+                shown += 1
+                if shown >= 8:
+                    break
         # A JSON payload embedded in the page is the usual alternative to a table, and
         # would be a far better thing to read than HTML.
         for sc in scripts:
