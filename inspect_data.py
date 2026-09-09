@@ -11,6 +11,7 @@ whether something is missing from the data or just isn't being displayed.
 It prints counts and flags, never a score or a grade. Safe to paste.
 """
 
+import getpass
 import json
 import os
 import sys
@@ -29,15 +30,28 @@ load_dotenv(os.path.join(HERE, ".env"))
 def load_published():
     if not os.path.exists(BLOB):
         return None, "docs/data.enc.json doesn't exist yet."
+    with open(BLOB, encoding="utf-8") as fh:
+        blob = json.load(fh)
+
     user = os.getenv("DASH_USERNAME", "").strip()
     pw = os.getenv("DASH_PASSWORD", "")
-    if not user or not pw:
-        return None, "DASH_USERNAME / DASH_PASSWORD aren't in .env, so it can't be opened."
-    with open(BLOB, encoding="utf-8") as fh:
-        data = decrypt(json.load(fh), user, pw)
+    if user and pw:
+        data = decrypt(blob, user, pw)
+        if data is not None:
+            return data, None
+        print("The credentials in .env don't open this file -- it was published under a\n"
+              "different username or password (most likely the GitHub secrets).\n")
+
+    if not sys.stdin.isatty():
+        return None, "Can't open the file, and there's no terminal to ask on."
+
+    print("Enter the username and password you type on the website:")
+    user = input("  Username: ").strip()
+    pw = getpass.getpass("  Password: ")
+    data = decrypt(blob, user, pw)
     if data is None:
-        return None, ("Those credentials don't open the file. The file was published "
-                      "under a different username or password.")
+        return None, "Those don't open it either."
+    print()
     return data, None
 
 

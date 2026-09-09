@@ -17,7 +17,7 @@ import sys
 
 from dotenv import load_dotenv
 
-from publish import OUT_FILE, encrypt, prompt_credentials
+from publish import OUT_FILE, decrypt, encrypt, prompt_credentials
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE_FILE = os.path.join(HERE, "cache.json")
@@ -51,10 +51,44 @@ def credentials():
     return prompt_credentials()
 
 
+def check_not_locking_anyone_out(username, password):
+    """Refuse to republish under credentials that don't match the current file.
+
+    Whatever is published now is what phones are signing in with. Re-encrypting under a
+    different password silently locks them out, and the only symptom is "wrong username
+    or password" on a device that was working a minute earlier. A machine configured
+    with the wrong .env would do this on every scheduled run.
+    """
+    if not os.path.exists(OUT_FILE):
+        return
+    try:
+        with open(OUT_FILE, encoding="utf-8") as fh:
+            if decrypt(json.load(fh), username, password) is not None:
+                return  # same credentials, carry on
+    except (json.JSONDecodeError, OSError, KeyError):
+        return  # unreadable file: nothing to protect
+
+    print("\n!! The published file does NOT open with the credentials configured here.")
+    print("   Publishing now would re-lock it with these instead, and any device signed")
+    print("   in with the old ones would stop working.\n")
+    print("   If DASH_USERNAME / DASH_PASSWORD here are wrong, fix .env.")
+    print("   If you mean to change the website password, re-run with:")
+    print("     ALLOW_PASSWORD_CHANGE=1 python sync.py\n")
+
+    if os.getenv("ALLOW_PASSWORD_CHANGE") == "1":
+        print("   ALLOW_PASSWORD_CHANGE is set -- going ahead.")
+        return
+    if sys.stdin.isatty():
+        if input("   Change the website password to the one in .env? [y/N] ").strip().lower() == "y":
+            return
+    sys.exit("Stopped without publishing. Nothing was changed.")
+
+
 def main():
     # Credentials first: they're needed to read the published file, and a missing secret
     # should stop the run before it touches the school's servers.
     username, password = credentials()
+    check_not_locking_anyone_out(username, password)
 
     # 1. Scrape. Imported here so a login failure surfaces before anything else happens.
     print("Reading the portal...")
