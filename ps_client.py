@@ -88,31 +88,31 @@ class PowerSchoolClient:
 
     def login(self):
         """Get an authenticated session, either by posting the form or reusing a cookie."""
-        if COOKIE_HEADER:
-            # Preferred fallback: every cookie the browser holds for this site, sent
-            # verbatim, so Imperva's cookies travel with the PowerSchool session.
-            self.session.headers["Cookie"] = COOKIE_HEADER
-            if not self._is_logged_in():
-                raise LoginError(
-                    "The browser session in PS_COOKIE_HEADER isn't valid any more.\n"
-                    "Sessions last hours, not days. Run `python set_cookie.py` again "
-                    "with a fresh copy."
-                )
-            return self
+        # A saved session is worth trying first -- it skips the sign-in entirely --
+        # but sessions expire, and a dead one must not stand in the way of a password
+        # that still works. Try it, then fall through.
+        if COOKIE_HEADER or COOKIE:
+            if COOKIE_HEADER:
+                self.session.headers["Cookie"] = COOKIE_HEADER
+            else:
+                self.session.cookies.set("JSESSIONID", COOKIE, domain=_host(self.base_url))
 
-        if COOKIE:
-            # Older fallback: a bare JSESSIONID. Kept for portals with no bot
-            # protection in front of them, but behind Imperva it fails on its own --
-            # set_cookie.py captures the full header instead.
-            self.session.cookies.set("JSESSIONID", COOKIE, domain=_host(self.base_url))
-            if not self._is_logged_in():
+            if self._is_logged_in():
+                return self
+
+            which = "PS_COOKIE_HEADER" if COOKIE_HEADER else "PS_COOKIE"
+            print(f"  the saved browser session ({which}) has expired")
+            # Clear it out, or its stale cookies ride along with the sign-in below.
+            self.session.headers.pop("Cookie", None)
+            self.session.cookies.clear()
+
+            if not (USERNAME and PASSWORD):
                 raise LoginError(
-                    "PS_COOKIE was set but the session isn't valid.\n"
-                    "Behind Imperva a bare JSESSIONID is not enough on its own -- its "
-                    "own cookies have to travel with it.\n"
-                    "Run `python set_cookie.py` to capture the whole browser session."
+                    f"{which} is no longer valid, and there's no username and password "
+                    "to fall back on.\nRun `python set_cookie.py` for a fresh session, "
+                    "or fill in PS_USERNAME and PS_PASSWORD in .env."
                 )
-            return self
+            print("  falling back to signing in with your username and password")
 
         if not USERNAME or not PASSWORD:
             raise LoginError(
