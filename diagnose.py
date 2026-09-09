@@ -150,6 +150,28 @@ def main():
         if not interesting:
             for path in sorted(paths)[:20]:
                 print(f"    {path}")
+
+        # Nothing useful inline means the request URL is assembled inside one of the
+        # bundles the page loads, so follow those and look in them instead.
+        srcs = [sc.get("src") for sc in scripts if sc.get("src")]
+        local = [x for x in srcs if not x.startswith(("http://", "https://", "//"))]
+        print(f"  external scripts: {len(srcs)} ({len(local)} same-origin)")
+        hits = {}
+        for src in local:
+            try:
+                js = client.get(src if src.startswith("/") else f"/guardian/{src}")
+            except Exception as err:
+                print(f"    ! {src[:52]}: {type(err).__name__}")
+                continue
+            for m in re.findall(r"""["'`](/(?:ws|guardian|api)/[A-Za-z0-9._/{}$-]{3,70})["'`]""", js):
+                if any(k in m.lower() for k in
+                       ("assign", "score", "grade", "lookup", "section", "xte")):
+                    hits.setdefault(m, src)
+        print(f"  endpoints found inside them: {len(hits)}")
+        for path, src in sorted(hits.items())[:25]:
+            print(f"    {path}   (from {src.rsplit('/', 1)[-1][:34]})")
+        if not hits and local:
+            print("    none matched -- the URL is probably built from string fragments")
         # A JSON payload embedded in the page is the usual alternative to a table, and
         # would be a far better thing to read than HTML.
         for sc in scripts:
