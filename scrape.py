@@ -55,7 +55,12 @@ def scrape_all(save_html=False):
 
     data = {
         "student": {"name": _student_name(home_html), "school": ""},
-        "scraped_at": datetime.datetime.now().isoformat(timespec="seconds"),
+        # Timezone-aware, always. A bare timestamp is read by the browser as the
+        # viewer's own local time, so one written on a UTC runner showed up hours in
+        # the future on a phone in a western timezone -- and made the data look fresher
+        # than it was.
+        "scraped_at": datetime.datetime.now(datetime.timezone.utc)
+        .isoformat(timespec="seconds"),
         "is_sample": False,
         "gpa": _try_gpa(client),
         "attendance": {

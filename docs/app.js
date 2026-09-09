@@ -253,6 +253,20 @@ function esc(v) {
 
 const fmtPct = (n) => (typeof n === "number" ? n.toFixed(1) : "—");
 
+/**
+ * Parse a scrape timestamp.
+ *
+ * Older files carry no timezone, and JavaScript reads a bare timestamp as the viewer's
+ * local time. Those were written on a UTC machine, so treat an unmarked one as UTC
+ * rather than letting it drift by the reader's own offset.
+ */
+function parseStamp(iso) {
+  if (!iso) return null;
+  const marked = /(?:Z|[+-]\d{2}:?\d{2})$/.test(iso);
+  const d = new Date(marked ? iso : `${iso}Z`);
+  return isNaN(d) ? null : d;
+}
+
 function fmtDate(iso) {
   if (!iso) return "—";
   const d = new Date(`${iso}T00:00:00`);
@@ -260,9 +274,9 @@ function fmtDate(iso) {
 }
 
 function fmtWhen(iso) {
-  const d = new Date(iso);
-  return isNaN(d) ? iso
-    : d.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
+  const d = parseStamp(iso);
+  return d ? d.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })
+           : iso;
 }
 
 const deltaClass = (d) => (d == null ? "flat" : d > 0.05 ? "up" : d < -0.05 ? "down" : "flat");
@@ -405,10 +419,8 @@ function courses() { return state.data?.courses || []; }
 
 /** Hours since the last successful sync, or null if we can't tell. */
 function hoursStale() {
-  const at = state.data?.scraped_at;
-  if (!at) return null;
-  const then = new Date(at);
-  if (isNaN(then)) return null;
+  const then = parseStamp(state.data?.scraped_at);
+  if (!then) return null;
   return (Date.now() - then.getTime()) / 36e5;
 }
 
