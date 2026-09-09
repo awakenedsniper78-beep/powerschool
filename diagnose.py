@@ -135,6 +135,21 @@ def main():
                   "\n  endpoint entirely.")
         scripts = soup.find_all("script")
         print(f"  script tags: {len(scripts)}")
+
+        # 155KB of page yielding 1.7KB of text means the table is drawn client-side.
+        # What matters then is which URL its JavaScript asks for the data, so pull
+        # every endpoint-shaped string out of the page and show the plausible ones.
+        paths = set(re.findall(r"""["'](/(?:ws|guardian|api)/[A-Za-z0-9._/-]{3,60})["']""",
+                               html))
+        interesting = sorted(p for p in paths if any(
+            k in p.lower() for k in ("assign", "score", "grade", "lookup", "section",
+                                     "student", "xte", "json")))
+        print(f"  endpoint-shaped strings in the page: {len(paths)}")
+        for path in interesting[:20]:
+            print(f"    {path}")
+        if not interesting:
+            for path in sorted(paths)[:20]:
+                print(f"    {path}")
         # A JSON payload embedded in the page is the usual alternative to a table, and
         # would be a far better thing to read than HTML.
         for sc in scripts:
