@@ -12,6 +12,7 @@ It also saves the raw HTML into saved_html/ (gitignored, never committed) so the
 markup can be compared against what the parser expects.
 """
 
+import argparse
 import os
 import re
 import sys
@@ -24,6 +25,11 @@ from scrape import _resolve
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "saved_html")
+SAFE = False
+
+
+def name_of(course, index):
+    return f"course #{index + 1}" if SAFE else str(course.get("name"))
 
 
 def save(name, html):
@@ -46,6 +52,15 @@ def describe_link(href):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    # Actions logs on a public repo are public, so the CI run must not echo page text
+    # or course names -- only counts, column labels and structure.
+    ap.add_argument("--safe", action="store_true",
+                    help="omit anything identifying; for running in a public CI log")
+    args = ap.parse_args()
+    global SAFE
+    SAFE = args.safe
+
     print("Signing in...")
     client = PowerSchoolClient().login()
 
@@ -60,9 +75,13 @@ def main():
         sys.exit("No courses parsed at all -- the grid parser is the problem, not assignments.")
 
     print("\nPer-course assignment links:")
-    for c in courses:
-        print(f"  {c['name'][:28]:<28} grade={str(c.get('grade_percent')):>6}  "
-              f"link={describe_link(c.get('link'))}")
+    for i, c in enumerate(courses):
+        graded = isinstance(c.get("grade_percent"), (int, float))
+        link = describe_link(c.get("link"))
+        if SAFE:
+            # The query string can carry identifiers; report only its shape.
+            link = re.sub(r"=[^&]*", "=...", link)
+        print(f"  {name_of(c, i)[:28]:<28} graded={'yes' if graded else 'no ':>3}  {link}")
 
     # Also look at every term's cell, not just the current one -- if only one term
     # carries the link, that alone explains empty assignment lists.
@@ -82,10 +101,10 @@ def main():
           if graded else "\nNo course has a grade posted; inspecting the first two anyway.")
 
     for n, target in enumerate(targets):
-        print(f"\n{'='*70}\n{target['name']}\n{'='*70}")
+        print(f"\n{'='*70}\n{name_of(target, n)}\n{'='*70}")
         url = _resolve(target["link"])
         html = client.get(url)
-        print(f"  url    {url}")
+        print(f"  url    {re.sub(r'=[^&]*', '=...', url) if SAFE else url}")
         print(f"  saved  {save(f'scores{n}.html', html)}")
         print(f"  bytes  {len(html)}")
 
@@ -106,7 +125,10 @@ def main():
             continue
 
         text = soup.get_text(" ", strip=True)
-        print(f"  no table matched. Page text begins:\n    {text[:260]}")
+        if SAFE:
+            print(f"  no table matched. Page holds {len(text)} characters of text.")
+        else:
+            print(f"  no table matched. Page text begins:\n    {text[:260]}")
         if not tables:
             print("\n  NO tables at all. If the page is mostly script tags, the portal"
                   "\n  draws assignments in JavaScript and this needs a different"
@@ -120,10 +142,16 @@ def main():
             if any(k in body for k in ('"assignment', "assignments", "_assignmentsData")):
                 print(f"    ! a script mentions assignments ({len(body)} chars) -- the"
                       " data is probably embedded as JSON")
+                keys = sorted(set(re.findall(r'"([A-Za-z_][A-Za-z0-9_]{2,24})"\s*:', body)))
+                if keys:
+                    print(f"      field names in it: {', '.join(keys[:25])}")
                 break
 
-    print("\nDone. saved_html/ holds the raw pages -- they contain your grades, so it is"
-          "\ngitignored. Share the structure above, not the files, unless you're happy to.")
+    if SAFE:
+        print("\nDone. Structure only -- no page content was printed.")
+    else:
+        print("\nDone. saved_html/ holds the raw pages -- they contain your grades, so it"
+              "\nis gitignored. Share the structure above, not the files.")
 
 
 if __name__ == "__main__":
