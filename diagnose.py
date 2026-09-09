@@ -70,44 +70,57 @@ def main():
     for term, cell in (courses[0].get("terms") or {}).items():
         print(f"  {term}: {describe_link((cell or {}).get('link'))}")
 
-    target = next((c for c in courses if c.get("link")), None)
-    if target is None:
+    # A course with no grade posted may genuinely have no assignments, so look at the
+    # ones that DO have a grade -- those are where rows must exist.
+    graded = [c for c in courses if isinstance(c.get("grade_percent"), (int, float))
+              and c.get("link")]
+    targets = graded[:2] or [c for c in courses if c.get("link")][:2]
+    if not targets:
         sys.exit("\nNo course has a usable link. That's the bug: the scrape never even "
                  "requests an assignments page.")
+    print(f"\nInspecting {len(targets)} course(s) that have grades posted."
+          if graded else "\nNo course has a grade posted; inspecting the first two anyway.")
 
-    print(f"\nFetching assignments page for {target['name']}...")
-    url = _resolve(target["link"])
-    html = client.get(url)
-    print(f"  url    {url}")
-    print(f"  saved  {save('scores.html', html)}")
-    print(f"  bytes  {len(html)}")
+    for n, target in enumerate(targets):
+        print(f"\n{'='*70}\n{target['name']}\n{'='*70}")
+        url = _resolve(target["link"])
+        html = client.get(url)
+        print(f"  url    {url}")
+        print(f"  saved  {save(f'scores{n}.html', html)}")
+        print(f"  bytes  {len(html)}")
 
-    soup = BeautifulSoup(html, "html.parser")
-    tables = soup.find_all("table")
-    print(f"\nTables on that page: {len(tables)}")
-    for i, t in enumerate(tables):
-        headers = [re.sub(r"\s+", " ", c.get_text(" ", strip=True))[:18]
-                   for c in t.find_all(["th", "td"], limit=10)]
-        print(f"  table {i}: {len(t.find_all('tr'))} rows | first cells: {headers}")
+        soup = BeautifulSoup(html, "html.parser")
+        tables = soup.find_all("table")
+        print(f"  tables {len(tables)}")
+        for i, t in enumerate(tables):
+            headers = [re.sub(r"\s+", " ", c.get_text(" ", strip=True))[:20]
+                       for c in t.find_all(["th", "td"], limit=10)]
+            print(f"    table {i}: {len(t.find_all('tr'))} rows | cells: {headers}")
 
-    parsed = parse_assignments(html)
-    print(f"\nparse_assignments() returned {len(parsed)} rows")
-    if parsed:
-        keys = parsed[0]
-        print("  first row shape (values hidden):")
-        for k, v in keys.items():
-            state = "empty" if v in (None, "", []) else "present"
-            print(f"    {k:<16} {state}")
-    else:
-        # No table matched. The most common modern cause is a page whose contents are
-        # drawn by JavaScript, which requests never executes.
-        text = soup.get_text(" ", strip=True)[:300]
-        print("  nothing matched. Page begins:")
-        print(f"    {text[:280]}")
-        if len(tables) == 0:
-            print("\n  There are NO tables at all. If the page is short and mentions a"
-                  "\n  script or app root, the portal renders assignments in JavaScript"
-                  "\n  and this approach needs a different endpoint.")
+        parsed = parse_assignments(html)
+        print(f"  parse_assignments() -> {len(parsed)} rows")
+        if parsed:
+            print("  first row shape (values hidden):")
+            for k, v in parsed[0].items():
+                print(f"    {k:<16} {'empty' if v in (None, '', []) else 'present'}")
+            continue
+
+        text = soup.get_text(" ", strip=True)
+        print(f"  no table matched. Page text begins:\n    {text[:260]}")
+        if not tables:
+            print("\n  NO tables at all. If the page is mostly script tags, the portal"
+                  "\n  draws assignments in JavaScript and this needs a different"
+                  "\n  endpoint entirely.")
+        scripts = soup.find_all("script")
+        print(f"  script tags: {len(scripts)}")
+        # A JSON payload embedded in the page is the usual alternative to a table, and
+        # would be a far better thing to read than HTML.
+        for sc in scripts:
+            body = sc.string or ""
+            if any(k in body for k in ('"assignment', "assignments", "_assignmentsData")):
+                print(f"    ! a script mentions assignments ({len(body)} chars) -- the"
+                      " data is probably embedded as JSON")
+                break
 
     print("\nDone. saved_html/ holds the raw pages -- they contain your grades, so it is"
           "\ngitignored. Share the structure above, not the files, unless you're happy to.")
